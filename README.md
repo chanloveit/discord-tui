@@ -32,5 +32,5 @@ DISCORD_TOKEN=your_token_here
 
 ### 4. Run
 ```bash
-node index.ts
+npm run dev
 ```
