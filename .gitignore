@@ -1,2 +1,4 @@
 .env
 .manifest
+node_modules/
+dist/
