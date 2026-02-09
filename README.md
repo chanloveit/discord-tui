@@ -13,12 +13,9 @@
 ### 2. Configure Project
 ```bash
 npm install
+npm run setup 
 ```
-
-Create `.env` file:
-```
-DISCORD_TOKEN=your_token_here
-```
+→Enter your Discord bot token
 
 ### 3. Invite Bot to Server
 1. Go to "OAuth2" → "URL Generator"
