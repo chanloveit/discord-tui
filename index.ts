@@ -4,6 +4,7 @@ import { Client, GatewayIntentBits, Events, ChannelType, TextChannel } from 'dis
 import { commands } from './command.js';
 import * as readline from 'readline';
 
+
 const client: Client = new Client({
 	intents: [
 		GatewayIntentBits.Guilds,
@@ -14,11 +15,11 @@ const client: Client = new Client({
 
 const colors = {
 	discord: chalk.hex('#5865F2'), 
-	success: chalk.hex('#57F287'),     
+	success: chalk.green,     
 	danger: chalk.hex('#ED4245'),      
 	warning: chalk.hex('#FEE75C'),     
 	text: chalk.hex('#DBDEE1'),        
-	username: chalk.hex('#00D9FF'),     
+	username: chalk.cyan,     
 	timestamp: chalk.gray,
 	command: chalk.hex('#EB459E'),      
 };
@@ -35,13 +36,13 @@ let currentChannel: TextChannel | null = null;
 
 client.once(Events.ClientReady, (readyClient) => {
 	console.log(colors.discord('Discord'));
-	console.log(colors.success(`✓ Logged in as ${readyClient.user?.tag}`))
+	console.log(colors.success(`✓ Logged in as ${readyClient.user?.tag}\n`))
 	commands();
 })
 
 client.on('messageCreate', (message) => {
   if (currentChannel && message.channel.id === currentChannel.id){
-    console.log(`[${message.author.username}]: ${message.content}`);
+    console.log('[' + colors.username(message.author.username) + ']: ' + message.content);
   }
 });
 
@@ -101,7 +102,7 @@ rl.on('line', async (input: string) => {
 			const messages = await channel.messages.fetch({ limit: 10 });
 	          console.log('\nRecent messages:');
 	          messages.reverse().forEach(message => {
-	            console.log(`[${message.author.username}]: ${message.content}`);
+	            console.log('[' + colors.username(message.author.username) + ']: ' + message.content);
 	          });
 		}
 	
