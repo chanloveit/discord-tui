@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import chalk from 'chalk';
 import { Client, GatewayIntentBits, Events, ChannelType, TextChannel } from 'discord.js';
 import { commands } from './command.js';
 import * as readline from 'readline';
@@ -11,6 +12,17 @@ const client: Client = new Client({
 	]
 });
 
+const colors = {
+	discord: chalk.hex('#5865F2'), 
+	success: chalk.hex('#57F287'),     
+	danger: chalk.hex('#ED4245'),      
+	warning: chalk.hex('#FEE75C'),     
+	text: chalk.hex('#DBDEE1'),        
+	username: chalk.hex('#00D9FF'),     
+	timestamp: chalk.gray,
+	command: chalk.hex('#EB459E'),      
+};
+
 
 const rl = readline.createInterface({
 	input: process.stdin,
@@ -20,10 +32,10 @@ const rl = readline.createInterface({
 });
 
 let currentChannel: TextChannel | null = null;
-let currentInput = '';
 
 client.once(Events.ClientReady, (readyClient) => {
-	console.log(`✓ Logged in as ${readyClient.user?.tag}\n`);
+	console.log(colors.discord('Discord'));
+	console.log(colors.success(`✓ Logged in as ${readyClient.user?.tag}`))
 	commands();
 })
 
@@ -58,7 +70,7 @@ rl.on('line', async (input: string) => {
 	
 			const guild = client.guilds.cache.get(args[0]);
 			if(!guild){
-				console.log('Server not found');
+				console.log(colors.warning('Server not found'));
 				return;
 			}
 			
@@ -79,12 +91,12 @@ rl.on('line', async (input: string) => {
 			const channel = client.channels.cache.get(args[0]);
 			
 			if(!(channel && channel.type === ChannelType.GuildText)){
-				console.log('Channel not found.');
+				console.log(colors.warning('Channel not found.'));
 				return;
 			}
 	
 			currentChannel = channel;
-			console.log(`✓ Joined #${channel.name}`);
+			console.log(colors.success(`✓ Joined #${channel.name}`));
 			
 			const messages = await channel.messages.fetch({ limit: 10 });
 	          console.log('\nRecent messages:');
@@ -95,7 +107,7 @@ rl.on('line', async (input: string) => {
 	
 		else if(command == '/leave'){
 			if(!currentChannel){
-				console.log('Not in a channel');
+				console.log(colors.warning('Not in a channel'));
 				return;
 			}
 	
@@ -127,7 +139,7 @@ rl.on('line', async (input: string) => {
 			}
 
 			catch(error){
-				console.log('Error');
+				console.log(colors.warning('Error'));
 			}
 		}
 
