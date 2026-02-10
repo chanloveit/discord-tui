@@ -42,7 +42,11 @@ client.once(Events.ClientReady, (readyClient) => {
 
 client.on('messageCreate', (message) => {
   if (currentChannel && message.channel.id === currentChannel.id){
-    console.log('[' + colors.username(message.author.username) + ']: ' + message.content);
+		const time: Date = new Date(message.createdTimestamp);
+		const hours: string = time.getHours().toString().padStart(2, '0');
+		const minutes: string = time.getMinutes().toString().padStart(2, '0');
+		const timeStr: string = colors.timestamp(`[${hours}:${minutes}] `);
+    console.log(timeStr + '[' + colors.username(message.author.username) + ']: ' + message.content);
   }
 });
 
@@ -102,7 +106,11 @@ rl.on('line', async (input: string) => {
 			const messages = await channel.messages.fetch({ limit: 10 });
 	          console.log('\nRecent messages:');
 	          messages.reverse().forEach(message => {
-	            console.log('[' + colors.username(message.author.username) + ']: ' + message.content);
+							const time: Date = new Date(message.createdTimestamp);
+							const hours: string = time.getHours().toString().padStart(2, '0');
+							const minutes: string = time.getMinutes().toString().padStart(2, '0');
+							const timeStr: string = colors.timestamp(`[${hours}:${minutes}] `);
+	            console.log(timeStr + '[' + colors.username(message.author.username) + ']: ' + message.content);
 	          });
 		}
 	
