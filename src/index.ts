@@ -36,10 +36,10 @@ client.once(Events.ClientReady, (readyClient) => {
 	console.log(colors.success(`✓ Logged in as ${readyClient.user?.tag}\n`));
 	commands();
 });
+
 client.on('messageCreate', (message) => {
   if (currentChannel && message.channel.id === currentChannel.id){
 		const time = formatTime(message.createdTimestamp);
-		
 		const timeStr = colors.timestamp(`[${time}] `);
     console.log(timeStr + '[' + colors.username(message.author.username) + ']: ' + message.content);
   }

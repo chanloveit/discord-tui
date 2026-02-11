@@ -1,0 +1,24 @@
+import blessed from 'blessed';
+
+export function createSidebar(screen: blessed.Widgets.Screen){
+	const sidebar = blessed.list({
+		parent: screen,
+		width: '30%',
+		height: '100%',
+		border: {
+			type: 'line'
+		},
+		style: {
+			border: {
+				fg: 'blue'
+			}
+		},
+		label: 'Servers & Channels',
+		keys: true,
+		vi: true,
+		mouse: true,
+		tags: true
+	});
+
+	return sidebar;
+}
