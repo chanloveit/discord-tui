@@ -25,11 +25,17 @@ const rl = readline.createInterface({
 let currentChannel: TextChannel | null = null;
 
 client.once(Events.ClientReady, (readyClient) => {
-	console.log(colors.discord('Discord'));
-	console.log(colors.success(`✓ Logged in as ${readyClient.user?.tag}\n`))
+	const logo = `                         
+	 ____  _                   _ 
+	|    \\|_|___ ___ ___ ___ _| |
+	|  |  | |_ -|  _| . |  _| . |
+	|____/|_|___|___|___|_| |___|
+                                                              
+	`;
+	console.log(colors.discord(logo));
+	console.log(colors.success(`✓ Logged in as ${readyClient.user?.tag}\n`));
 	commands();
-})
-
+});
 client.on('messageCreate', (message) => {
   if (currentChannel && message.channel.id === currentChannel.id){
 		const time = formatTime(message.createdTimestamp);
