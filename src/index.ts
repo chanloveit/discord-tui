@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { colors } from './utils/colors.js';
+import { findChannelByPath } from './utils/channelFinder.js';
 import { Client, GatewayIntentBits, Events, ChannelType, TextChannel } from 'discord.js';
 import { commands } from './utils/command.js';
 import * as readline from 'readline';
@@ -54,40 +55,29 @@ rl.on('line', async (input: string) => {
 			console.log(`\n${client.guilds.cache.size} Servers.`);
 			
 			client.guilds.cache.forEach(guild => {
-				console.log(`${guild.name} (ID: ${guild.id})`);
+				const textChannels = guild.channels.cache.filter(ch => ch.type === ChannelType.GuildText);
+				console.log(colors.discord(`${guild.name}: `));
+				textChannels.forEach(channel => {
+					console.log(`${guild.name}:${channel.name}`);
+				});
+
+				console.log('');
 			});
 		}
 	
-		else if(command == '/channels'){
-			if(!args[0]){
-				console.log('Usage: /channels <Server ID>');
-				return;
-			}
-	
-			const guild = client.guilds.cache.get(args[0]);
-			if(!guild){
-				console.log(colors.warning('Server not found'));
-				return;
-			}
-			
-			const textChannels = guild.channels.cache.filter(channel => channel.type === ChannelType.GuildText);
-			console.log(`\n${textChannels.size} text channels in ${guild.name}\n`);
-			
-			textChannels.forEach(channel => {
-				console.log(`#${channel.name} (ID: ${channel.id})\n`);
-			});
-		}
 	
 		else if(command == '/join'){
 			if(!args[0]){
-				console.log('Usage: /join <Channel ID>');
+				console.log('Usage: /join <server>:<channel>');
+				console.log('Tip: Use /servers to list all available paths');
 				return;
 			}
 	
-			const channel = client.channels.cache.get(args[0]);
-			
-			if(!(channel && channel.type === ChannelType.GuildText)){
-				console.log(colors.warning('Channel not found.'));
+			const path = args.join(' ');
+			const channel = findChannelByPath(client, path);
+
+			if(!channel){
+				console.log(colors.warning('Channel Not Found'));
 				return;
 			}
 	
