@@ -197,6 +197,26 @@ client.on(Events.MessageCreate, (message) => {
 	}
 });
 
+inputBox.key(['up'], () => {
+	chatBox.scroll(-1);
+	screen.render();
+});
+
+inputBox.key(['down'], () => {
+	chatBox.scroll(1);
+	screen.render();
+});
+
+inputBox.key(['pageup'], () => {
+	chatBox.scroll(-chatBox.height);
+	screen.render();
+});
+
+inputBox.key(['pagedown'], () => {
+	chatBox.scroll(chatBox.height);
+	screen.render();
+});
+
 sidebar.focus();
 screen.render();
 
