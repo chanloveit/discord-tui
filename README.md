@@ -1,5 +1,4 @@
 # Discord in Terminal
-![](./public/main.jpg)
 > Building
 
 ## Setup
@@ -31,3 +30,5 @@ npm run setup
 ```bash
 npm run dev
 ```
+## dev note
+improving to TUI from CLI

@@ -34,7 +34,16 @@ screen.key(['C-c'], () => {
 
 
 client.once(Events.ClientReady, (readyClient) => {
+	const logo = `                         
+	 ____  _                   _ 
+	|    \\|_|___ ___ ___ ___ _| |
+	|  |  | |_ -|  _| . |  _| . |
+	|____/|_|___|___|___|_| |___|
+                                                              
+	`;
+	
 	chatBox.log(chalk.green(`✓ Logged in as ${readyClient.user?.tag}`))
+	chatBox.log(chalk.blue(logo));
 	const servers: string[]= [];
 	let itemIndex = 0;
 	
