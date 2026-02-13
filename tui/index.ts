@@ -106,7 +106,6 @@ sidebar.on('select', async(item, index) => {
 
 			chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(msg.author.username) + ': ' + msg.content);
 		});
-		chatBox.log('');
 	}
 
 	catch(error){
@@ -130,6 +129,64 @@ sidebar.key(['C-d'], () => {
 	screen.render();
 });
 
+inputBox.on('submit', async (msg) => {
+	const message = msg.trim();
+
+	if(!message){
+		inputBox.clearValue();
+		inputBox.focus();
+		screen.render();
+		return;
+	}
+
+	if(!currentChannel){
+		chatBox.log(chalk.red('No channel selected!'));
+		inputBox.clearValue();
+		inputBox.focus();
+		screen.render();
+		return;
+	}
+
+	try{
+		await currentChannel.send(message);
+		inputBox.clearValue();
+
+		const time = new Date().toLocaleTimeString(undefined, {
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: false
+			});
+
+			chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(client.user.username) + ': ' + message);
+
+		inputBox.focus();
+		screen.render();
+	}
+
+	catch(error){
+		chatBox.log(chalk.red(`Failed to send message: ${error}`));
+		inputBox.clearValue();
+		inputBox.focus();
+		screen.render();
+	}
+});
+
+client.on(Events.MessageCreate, (message) => {
+	if(message.author.id === client.user.id){
+		return;
+	}
+
+	if(currentChannel && message.channel.id === currentChannel.id){
+		const time = new Date(message.createdTimestamp).toLocaleTimeString(undefined, {
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: false
+			});
+
+			chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(message.author.username) + ': ' + message.content);
+			screen.render();
+	}
+});
 
 sidebar.focus();
 screen.render();
