@@ -8,9 +8,9 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "dev": "tsx ./src/index.ts",
-    "setup": "tsx ./src/setup.ts",
-    "dev:tui": "tsx ./tui/index.ts"
+    "dev:cli": "tsx ./cli/index.ts",
+    "setup": "tsx ./cli/setup.ts",
+    "dev": "tsx ./tui/index.ts"
   },
   "devDependencies": {
     "@types/blessed": "^0.1.27",
