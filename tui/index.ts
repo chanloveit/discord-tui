@@ -26,6 +26,7 @@ const inputBox = createInputBox(screen);
 
 
 let currentChannel: TextChannel | null = null;
+const channelMap = new Map<number, TextChannel>();
 
 screen.key(['C-c'], () => {
 	return process.exit(0);
@@ -35,71 +36,85 @@ screen.key(['C-c'], () => {
 client.once(Events.ClientReady, (readyClient) => {
 	chatBox.log(chalk.green(`✓ Logged in as ${readyClient.user?.tag}`))
 	const servers: string[]= [];
+	let itemIndex = 0;
+	
 	client.guilds.cache.forEach(guild => {
 		servers.push(`▶${guild.name}`);
+		itemIndex++;
+		
 		const textChannels = guild.channels.cache.filter(ch => ch.type === ChannelType.GuildText);
 		textChannels.forEach(channel => {
 			servers.push(`  #${channel.name}`);
+			channelMap.set(itemIndex, channel as TextChannel);
+			itemIndex++;
 		});
+		
 		servers.push('')
+		itemIndex++;
 	});
 
 	sidebar.setItems(servers);
+	let firstChannelIndex = -1;
+	for(let [index] of channelMap){
+		firstChannelIndex = index;
+		break;
+	}
+
+	if(firstChannelIndex !== -1){
+		sidebar.select(firstChannelIndex);
+	}
+	
 	screen.render();
 });
 
 sidebar.on('select', async(item, index) => {
-	const selectedText = item.getText();
+	const channel = channelMap.get(index);
 
-	if(selectedText.trim().startsWith('#')){
-		const channelName = selectedText.trim().replace(/^#\s*/, '');
+	if(!channel){
+		const sortedIndices = Array.from(channelMap.keys()).sort((a, b) => a - b);
+		const nextIndex = sortedIndices.find(i => i > index);
 
-		let found: TextChannel | null = null;
-		client.guilds.cache.forEach(guild => {
-			const channel = guild.channels.cache.find(ch => (
-				ch.type === ChannelType.GuildText && ch.name === channelName
-			));
-
-			if(channel && !found){
-				found = channel as TextChannel;
-			}
-		});
-
-		if(found){
-			currentChannel = found;
-			const channelName = (found as TextChannel).name;
-			const guildName = (found as TextChannel).guild.name;
-			
-			chatBox.setLabel(`channel - #${channelName}`);
-			chatBox.log('');
-			chatBox.log(chalk.green(`✓ Joined #${channelName} in ${guildName}`));
-
-			try{
-				const messages = await (found as TextChannel).messages.fetch({ limit: 10});
-				chatBox.log(chalk.yellow(`--- Recent messages ---`));
-				messages.reverse().forEach(msg => {
-					const time = new Date(msg.createdTimestamp).toLocaleTimeString(undefined, {
-						hour: '2-digit',
-						minute: '2-digit',
-						hour12: false
-					});
-
-					chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(msg.author.username) + ': ' + msg.content);
-				});
-				chatBox.log('');
-			}
-
-			catch(error){
-				chatBox.log(chalk.red('Failed to load messages'));
-			}
-			screen.render();
+		if(nextIndex !== undefined){
+			sidebar.select(nextIndex);
 		}
+		else{
+			sidebar.select(sortedIndices[0]);
+		}
+
+		screen.render();
+		return;
 	}
 
-	else{
-		sidebar.down(1);
-		screen.render();
+	currentChannel = channel;
+	
+	try{
+		const messages = await (currentChannel as TextChannel).messages.fetch({ limit: 10});
+		chatBox.setContent('');
+		
+		chatBox.setLabel(`▶${channel.guild.name} - #${channel.name}`);
+		
+		chatBox.log(chalk.green(`✓ Joined #${channel.name}`));
+		chatBox.log('');
+		chatBox.log(chalk.yellow(`--- Recent messages ---`));
+		
+		messages.reverse().forEach(msg => {
+			const time = new Date(msg.createdTimestamp).toLocaleTimeString(undefined, {
+				hour: '2-digit',
+				minute: '2-digit',
+				hour12: false
+			});
+
+			chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(msg.author.username) + ': ' + msg.content);
+		});
+		chatBox.log('');
 	}
+
+	catch(error){
+		chatBox.log(chalk.red('Failed to load messages'));
+	}
+
+	inputBox.focus();
+	screen.render();
 });
 
 
