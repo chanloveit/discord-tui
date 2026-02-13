@@ -18,7 +18,13 @@ export function createSidebar(screen: blessed.Widgets.Screen){
 		keys: true,
 		vi: true,
 		mouse: true,
-		tags: true
+		tags: true,
+		interactive: true,
+		invertSelected: true,
+
+		selected: {
+			fg: 'blue'
+		}
 	});
 
 	return sidebar;

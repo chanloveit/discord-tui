@@ -28,7 +28,6 @@ const inputBox = createInputBox(screen);
 let currentChannel: TextChannel | null = null;
 
 screen.key(['C-c'], () => {
-	chatBox.log(chalk.yellow('quit process...'))
 	return process.exit(0);
 });
 
@@ -57,9 +56,9 @@ sidebar.on('select', async(item, index) => {
 
 		let found: TextChannel | null = null;
 		client.guilds.cache.forEach(guild => {
-			const channel = guild.channels.cache.find(ch => {
+			const channel = guild.channels.cache.find(ch => (
 				ch.type === ChannelType.GuildText && ch.name === channelName
-			});
+			));
 
 			if(channel && !found){
 				found = channel as TextChannel;
@@ -97,8 +96,33 @@ sidebar.on('select', async(item, index) => {
 			screen.render();
 		}
 	}
+
+	else{
+		sidebar.down(1);
+		screen.render();
+	}
 });
 
+sidebar.on('select', (item, index) => {
+	chatBox.log('SELECT EVENT TRIGGERED!!!');
+	screen.render();
+});
+
+sidebar.on('action', () => {
+	chatBox.log('ACTION EVENT TRIGGERED!!!');
+	screen.render();
+});
+
+sidebar.on('element click', () => {
+	chatBox.log('CLICK EVENT!!!');
+	screen.render();
+});
+
+// keypress도 다시 확인
+sidebar.on('keypress', (ch, key) => {
+	chatBox.log(`Key: ${key.name}, full: ${key.full}`);
+	screen.render();
+});
 
 inputBox.on('cancel', () => {
 	sidebar.focus();
