@@ -5,6 +5,8 @@ import { createSidebar } from './components/sidebar.js';
 import { createChatBox } from './components/chatbox.js';
 import { createInputBox } from './components/inputbox.js';
 import chalk from 'chalk';
+import terminalImage from 'terminal-image';
+import got from 'got';
 
 const client = new Client({
 	intents: [
@@ -13,6 +15,20 @@ const client = new Client({
 		GatewayIntentBits.MessageContent
 	]
 });
+
+async function displayImage(url: string) {
+	try {
+		const body = await got(url).buffer();
+		const image = await terminalImage.buffer(body, {
+			width: 50,
+			height: 30,
+			preserveAspectRatio: true
+		});
+		return image;
+	} catch (error) {
+		return null;
+	}
+}
 
 const screen = blessed.screen({
 	smartCSR : true,
@@ -118,6 +134,23 @@ sidebar.on('select', async(item, index) => {
 			});
 
 			chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(msg.author.username) + ': ' + msg.content);
+			
+			if(msg.attachments.size > 0){
+				for(const attachment of msg.attachments.values()){
+					if(attachment.contentType.startsWith('image/')){
+						try{
+							const preview = await displayImage(attachment.url);
+							if(preview){
+								chatBox.log(preview);
+							}
+						}
+		
+						catch(error){
+							chatBox.log(chalk.red('Fail to load image'));
+						}
+					}
+				}
+			}
 		});
 	}
 
@@ -184,7 +217,7 @@ inputBox.on('submit', async (msg) => {
 	}
 });
 
-client.on(Events.MessageCreate, (message) => {
+client.on(Events.MessageCreate, async (message) => {
 	if(message.author.id === client.user.id){
 		return;
 	}
@@ -197,9 +230,27 @@ client.on(Events.MessageCreate, (message) => {
 			});
 
 			chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(message.author.username) + ': ' + message.content);
+			if(message.attachments.size > 0){
+				for(const attachment of message.attachments.values()){
+					if(attachment.contentType.startsWith('image/')){
+						try{
+							const preview = await displayImage(attachment.url);
+							if(preview){
+								chatBox.log(preview);
+							}
+						}
+		
+						catch(error){
+							chatBox.log(chalk.red('Fail to load image'));
+						}
+					}
+				}
+			}	
+		
 			screen.render();
 	}
 });
+
 
 inputBox.key(['up'], () => {
 	chatBox.scroll(-1);
@@ -212,12 +263,12 @@ inputBox.key(['down'], () => {
 });
 
 inputBox.key(['pageup'], () => {
-	chatBox.scroll(-chatBox.height);
+	chatBox.scroll(-chatBox.height as number);
 	screen.render();
 });
 
 inputBox.key(['pagedown'], () => {
-	chatBox.scroll(chatBox.height);
+	chatBox.scroll(chatBox.height as number);
 	screen.render();
 });
 
