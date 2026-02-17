@@ -1,0 +1,37 @@
+import type { Widgets } from 'blessed';
+
+export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListElement, chatBox: Widgets.Log, inputBox: Widgets.TextboxElement){
+	screen.key(['C-c'], () => {
+		process.exit(0);
+	});
+
+	sidebar.key(['C-d'], () => {
+		inputBox.focus();
+		screen.render();
+	});
+	
+	inputBox.on('cancel', () => {
+		sidebar.focus();
+		screen.render();
+	});
+
+	inputBox.key(['up'], () => {
+		chatBox.scroll(-1);
+		screen.render();
+	});
+
+	inputBox.key(['down'], () => {
+		chatBox.scroll(1);
+		screen.render();
+	});
+
+	inputBox.key(['pageup'], () => {
+		chatBox.scroll(-(chatBox.height as number));
+		screen.render();
+	});
+
+	inputBox.key(['pagedown'], () => {
+		chatBox.scroll(chatBox.height as number);
+		screen.render();
+	});
+}
