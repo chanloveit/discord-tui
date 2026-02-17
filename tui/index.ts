@@ -6,7 +6,7 @@ import { Client, GatewayIntentBits, Events, ChannelType, TextChannel } from 'dis
 import { createSidebar } from './components/sidebar.js';
 import { createChatBox } from './components/chatbox.js';
 import { createInputBox } from './components/inputbox.js';
-import { LOGO } from './components/logo.js';
+import { LOGO, GUIDE } from './components/logo.js';
 import { setupKeyBindings } from './handlers/keyBindings.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
 import { handleChannelSelect } from './handlers/channelHandler.js';
@@ -36,35 +36,48 @@ setupKeyBindings(screen, sidebar, chatBox, inputBox);
 setupMessageHandlers(client, chatBox, inputBox, screen, () => currentChannel);
 
 client.once(Events.ClientReady, (readyClient) => {
-	chatBox.log(chalk.green(`✓ Logged in as ${readyClient.user?.tag}`))
+	chatBox.log(chalk.green(`✓ Logged in as ${readyClient.user?.tag}`));
 	chatBox.log(chalk.blue(LOGO));
-	
-	const servers: string[]= [];
-	let itemIndex = 0;
-	
-	client.guilds.cache.forEach(guild => {
-		servers.push(`▶${guild.name}`);
-		itemIndex++;
-		
-		const textChannels = guild.channels.cache.filter(ch => ch.type === ChannelType.GuildText);
-		textChannels.forEach(channel => {
-			servers.push(`  #${channel.name}`);
-			channelMap.set(itemIndex, channel as TextChannel);
+	chatBox.log(chalk.dim('  Press any key to continue...'));
+	screen.render();
+
+	screen.once('keypress', () => {
+		chatBox.setContent('');
+		chatBox.log(GUIDE);
+		screen.render();
+
+
+		const servers: string[] = [];
+		let itemIndex = 0;
+
+		client.guilds.cache.forEach(guild => {
+			servers.push(`▶${guild.name}`);
+			itemIndex++;
+
+			const textChannels = guild.channels.cache.filter(
+				ch => ch.type === ChannelType.GuildText
+			);
+
+			textChannels.forEach(channel => {
+				servers.push(`  #${channel.name}`);
+				channelMap.set(itemIndex, channel as TextChannel);
+				itemIndex++;
+			});
+
+			servers.push('');
 			itemIndex++;
 		});
-		
-		servers.push('')
-		itemIndex++;
+
+		sidebar.setItems(servers);
+
+		const firstChannelIndex = Array.from(channelMap.keys())[0];
+		if(firstChannelIndex !== undefined){
+			sidebar.select(firstChannelIndex);
+		}
+
+		sidebar.focus();
+		screen.render();
 	});
-
-	sidebar.setItems(servers);
-
-	const firstChannelIndex = Array.from(channelMap.keys())[0];
-	if(firstChannelIndex !== undefined){
-		sidebar.select(firstChannelIndex);
-	}
-	
-	screen.render();
 });
 
 sidebar.on('select', async (item, index) => {
@@ -87,7 +100,7 @@ sidebar.on('select', async (item, index) => {
 });
 
 
-sidebar.focus();
+chatBox.focus();
 screen.render();
 
 client.login(process.env.DISCORD_TOKEN);
