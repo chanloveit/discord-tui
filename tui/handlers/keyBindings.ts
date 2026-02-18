@@ -34,4 +34,17 @@ export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListEl
 		chatBox.scroll(chatBox.height as number);
 		screen.render();
 	});
+
+	inputBox.on('keypress', (ch) => {
+		const value = inputBox.getValue();
+		if(value.startsWith('/') || ch === '/'){
+			inputBox.style.border.fg = 'yellow';
+		}
+
+		else{
+			inputBox.style.border.fg = 'blue';
+		}
+
+		screen.render();
+	});
 }

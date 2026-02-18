@@ -1,10 +1,23 @@
 import chalk from 'chalk';
+
+import { handleCommand } from './commandHandler.js';
 import { Client, Events, Message, TextChannel } from 'discord.js';
 import type { Widgets } from 'blessed';
 import { formatTime } from '../utils/formatters.js';
 import { renderMessage } from '../utils/messageRenderer.js';
 
-export function setupMessageHandlers(client: Client, chatBox: Widgets.Log, inputBox: Widgets.TextboxElement, screen: Widgets.Screen, getCurrentChannel: () => TextChannel | null) {
+export function setupMessageHandlers(client: Client, chatBox: Widgets.Log, inputBox: Widgets.TextboxElement, sidebar: Widgets.ListElement, screen: Widgets.Screen, channelMap: Map<number, TextChannel>, getCurrentChannel: () => TextChannel | null, setCurrentChannel: (channel: TextChannel) => void) {
+	const commandCtx = {
+		client,
+		chatBox,
+		inputBox,
+		sidebar,
+		screen,
+		channelMap,
+		getCurrentChannel,
+		setCurrentChannel
+	};
+	
 	client.on(Events.MessageCreate, async (message: Message) => {
 		if(message.author.id === client.user?.id) return;
 
@@ -26,6 +39,13 @@ export function setupMessageHandlers(client: Client, chatBox: Widgets.Log, input
 			return;
 		}
 
+		if (await handleCommand(message, commandCtx)) {
+			inputBox.clearValue();
+			inputBox.focus();
+			screen.render();
+			return;
+		}
+		
 		const currentChannel = getCurrentChannel();
 		if(!currentChannel){
 			chatBox.log(chalk.red('No channel selected!'));

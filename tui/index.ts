@@ -33,7 +33,7 @@ let currentChannel: TextChannel | null = null;
 const channelMap = new Map<number, TextChannel>();
 
 setupKeyBindings(screen, sidebar, chatBox, inputBox);
-setupMessageHandlers(client, chatBox, inputBox, screen, () => currentChannel);
+setupMessageHandlers(client, chatBox, inputBox, sidebar, screen, channelMap, () => currentChannel, (channel) => { currentChannel = channel; });
 
 client.once(Events.ClientReady, (readyClient) => {
 	chatBox.log(chalk.green(`✓ Logged in as ${readyClient.user?.tag}`));
