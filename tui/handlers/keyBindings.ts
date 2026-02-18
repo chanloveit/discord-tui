@@ -9,11 +9,6 @@ export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListEl
 		inputBox.focus();
 		screen.render();
 	});
-	
-	inputBox.on('cancel', () => {
-		sidebar.focus();
-		screen.render();
-	});
 
 	inputBox.key(['up'], () => {
 		chatBox.scroll(-1);
