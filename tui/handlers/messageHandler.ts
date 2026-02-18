@@ -59,7 +59,7 @@ export function setupMessageHandlers(client: Client, chatBox: Widgets.Log, input
 			await currentChannel.send(message);
 			
 			const time = formatTime(Date.now());
-			chatBox.log(chalk.gray(`[${time}]`) + chalk.cyan(client.user?.username) + ': ' + message);
+			chatBox.log(chalk.gray(`[${time}]`) + ' ' + chalk.cyan(client.user?.username) + ': ' + message);
 
 			inputBox.clearValue();
 			inputBox.focus();
