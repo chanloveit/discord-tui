@@ -8,7 +8,7 @@
 1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
 2. Click "New Application"
 3. Go to "Bot" tab → "Reset Token" → Copy token
-4. Go to "Bot" tab → Enable "Message Content Intent" (Privileged Gateway Intents)
+4. Go to "Bot" tab → Enable "Presence Intent", "Server Members Intent" ,"Message Content Intent" (Privileged Gateway Intents)
 
 ### 2. Configure Project
 ```bash
