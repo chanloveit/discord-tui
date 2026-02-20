@@ -36,10 +36,6 @@ export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListEl
 			inputBox.style.border.fg = 'yellow';
 		}
 
-		else if(value.startsWith('$') || ch === '$'){
-			inputBox.style.border.fg = 'white';
-		}
-
 		else{
 			inputBox.style.border.fg = 'blue';
 		}
