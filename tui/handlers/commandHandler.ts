@@ -2,6 +2,10 @@ import chalk from 'chalk';
 import { Client, ChannelType, TextChannel } from 'discord.js';
 import type { Widgets } from 'blessed';
 import { formatTime } from '../utils/formatters.js';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 interface CommandContext{
 	client: Client;
@@ -138,16 +142,66 @@ const commands: Record<string, CommandHandler> = {
 
 	quit: () => {
 		process.exit(0);
+	},
+
+	'$': async (args, { chatBox, screen }) => {
+		const cmd = args.join(' ');
+		if(!cmd){
+			chatBox.log(chalk.red('Usage: $ <command> or /$ <command>'));
+			chatBox.log(chalk.yellow('Example: /$ git status'));
+			chatBox.log(chalk.yellow('Example: /$ npm run build'));
+			screen.render();
+			return;
+		}
+
+		chatBox.log(chalk.cyan(`$ ${cmd}`));
+		screen.render();
+
+		try{
+			const { stdout, stderr } = await execAsync(cmd, { timeout: 10000, maxBuffer: 1024 * 1024, cwd: process.cwd() });
+
+			if(stdout){
+				stdout.trim().split('\n').forEach(line => {
+					chatBox.log(line);
+				});
+			}
+
+			if(stderr){
+				stderr.trim().split('\n').forEach(line => {
+					chatBox.log(chalk.red(line));
+				});
+			}
+
+			if(!stderr && !stdout){
+				chatBox.log(chalk.green('✓ Command completed'));
+			}
+		}
+
+		catch(error){
+			if(error.killed){
+				chatBox.log(chalk.red('Timeout (10s exceeded)'));
+			}
+
+			else{
+				chatBox.log(chalk.red(`Error: ${error.message}`));
+			}
+		}
 	}
 };
 
 export async function handleCommand(input: string, ctx: CommandContext): Promise<boolean>{
+	if(input.startsWith('$')){
+		const cmd = input.slice(1).trim();
+		await commands['$']([cmd], ctx);
+		return true;
+	}
+	
 	if(!input.startsWith('/')){
 		return false;
 	}
 
 	const [cmd, ...args] = input.slice(1).trim().split(/\s+/);
-	const handler = commands[cmd.toLowerCase()];
+	const handler = commands[(cmd as string).toLowerCase()];
 
 	if(!handler){
 		ctx.chatBox.log(chalk.red(`Unknown command: /${cmd}  (type /help)`));
