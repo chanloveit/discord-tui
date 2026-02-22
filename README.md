@@ -11,7 +11,7 @@
 4. Go to "Bot" tab → Enable "Presence Intent", "Server Members Intent" ,"Message Content Intent" (Privileged Gateway Intents)
 
 ### 2. Configure Project
-(Install NodeJS)[https://nodejs.org/en/download]
+[Install NodeJS](https://nodejs.org/en/download)
 
 ```bash
 npm install
