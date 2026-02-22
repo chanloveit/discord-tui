@@ -144,9 +144,14 @@ const commands: Record<string, CommandHandler> = {
 
 	
 	sh: (_, { screen }) => {
+		screen.leave();
+		console.log(chalk.yellow('Enter exit to return to Discord'));
 		screen.spawn(process.env.SHELL || 'bash', [], {
 			stdio: 'inherit'
 		});
+		
+		screen.enter();
+		screen.render();
 	}
 };
 
