@@ -3,6 +3,7 @@ import { Client, TextChannel, DMChannel, User } from 'discord.js';
 import type { Widgets } from 'blessed';
 import { formatTime } from '../utils/formatters.js';
 
+
 interface CommandContext{
 	client: Client;
 	chatBox: Widgets.Log;
@@ -170,7 +171,23 @@ const commands: Record<string, CommandHandler> = {
 		const targetUsername = args[0];
 		const messageContent = args.slice(1).join(' ');
 
-		
+		const targetUser = await findUserByUsername(client, targetUsername as string, chatBox, screen);
+		if(!targetUser){
+			return;
+		}
+
+		try{
+			const dmChannel = await targetUser.createDM();
+			await dmChannel.send(messageContent);
+
+			dmChannelCache.set(targetUsername as string, dmChannel);
+			chatBox.log(chalk.green(`✉ DM sent to ${chalk.cyan(targetUser.username)}: `) + messageContent);
+		}
+		catch(error){
+			 chatBox.log(chalk.red(`Failed to send DM to ${targetUsername}: ${(error as Error).message}`));
+		}
+
+		screen.render();
 	}
 };
 
@@ -190,6 +207,17 @@ export async function handleCommand(input: string, ctx: CommandContext): Promise
 
 	await handler(args, ctx);
 	return true;
+}
+
+export async function sendToDMChannel(dmChannel: DMChannel, content: string, chatBox: Widgets.Log, client: Client): Promise<void>{
+	try{
+		await dmChannel.send(content);
+		const time = formatTime(Date.now());
+		chatBox.log(chalk.gray(`[${time}]`) + ' ' + chalk.green('You') + ': ' + content);
+	}
+	catch(error){
+		chatBox.log(chalk.red(`Failed to send message: ${(error as Error).message}`));
+	}
 }
 
 async function findUserByUsername(client: Client, username: string, chatBox: Widgets.Log, screen: Widgets.Screen): Promise<User | null>{
