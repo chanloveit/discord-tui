@@ -12,8 +12,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "dev:cli": "tsx ./cli/index.ts",
-    "setup": "tsx ./cli/setup.ts",
+    "setup": "tsx ./tui/setup.ts",
     "dev": "tsx ./tui/index.ts"
   },
   "devDependencies": {
