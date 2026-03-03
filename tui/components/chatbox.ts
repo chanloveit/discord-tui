@@ -6,7 +6,7 @@ export function createChatBox(screen: blessed.Widgets.Screen){
 		top: 0,
 		left: '30%',
 		width: '70%',
-		height: '90%',
+		height: '100%-3',
 		border: {
 			type: 'line'
 		},
