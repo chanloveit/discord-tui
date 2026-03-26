@@ -11,9 +11,10 @@ export function createInputBox(screen: blessed.Widgets.Screen){
 		border: {
 			type: 'line'
 		},
+		label: ' No channel selected ',
 		style: {
 			border: {
-				fg: 'blue'
+				fg: '#5865F2'
 			}
 		},
 		keys: true,

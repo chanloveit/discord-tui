@@ -37,7 +37,7 @@ export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListEl
 		}
 
 		else{
-			inputBox.style.border.fg = 'blue';
+			inputBox.style.border.fg = '#5865F2';
 		}
 
 		screen.render();

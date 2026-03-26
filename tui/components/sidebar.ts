@@ -9,24 +9,29 @@ export function createSidebar(screen: blessed.Widgets.Screen){
 		border: {
 			type: 'line'
 		},
+		scrollbar: {
+			ch: '█',
+			style: { fg: '#5865F2' }
+		},
 		style: {
 			border: {
-				fg: 'blue'
+				fg: '#5865F2'
 			},
 			selected: {
-				fg: 'blue',
+				fg: '#FFFFFF',
+				bg: '#5865F2',
 				bold: true
 			},
 			item: {
-				fg: 'white'
+				fg: '#B9BBBE'
 			}
 		},
-		label: 'Servers & Channels',
+		label: ' Servers & Channels ',
 
 		keys: false,
 		vi: true,
 		mouse: true,
-		tags: true,
+		tags: false,
 		interactive: true,
 		invertSelected: false
 	});

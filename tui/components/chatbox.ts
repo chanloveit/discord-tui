@@ -12,10 +12,10 @@ export function createChatBox(screen: blessed.Widgets.Screen){
 		},
 		style: {
 			border: {
-				fg: 'blue'
+				fg: '#5865F2'
 			}
 		},
-		label: 'Chat',
+		label: ' Chat ',
 		scrollable: true,
 		scrollbar: {
 			ch: '█',
@@ -23,7 +23,10 @@ export function createChatBox(screen: blessed.Widgets.Screen){
 				fg: 'blue'
 			}
 		},
-		alwaysScroll: true
+		alwaysScroll: true,
+		wrap: false,
+		tags: false,
+		unicode: true,
 	});
 
 	return chatBox;
