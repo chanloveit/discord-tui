@@ -1,7 +1,6 @@
 import chalk from 'chalk';
-import { Client, Events, Message, TextChannel } from 'discord.js';
+import { TextChannel } from 'discord.js';
 import type { Widgets } from 'blessed';
-import { formatTime } from '../utils/formatters.js';
 import { renderMessage } from '../utils/messageRenderer.js';
 
 export async function handleChannelSelect(channel: TextChannel, chatBox: Widgets.Log, inputBox: Widgets.TextElement, screen: Widgets.Screen): Promise<void>{
