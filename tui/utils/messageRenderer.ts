@@ -11,12 +11,12 @@ export async function renderMessage(message: Message, chatBox: Widgets.Log, show
 
 
 	if(message.content){
-		chatBox.log(`${timestamp} ${author}: ${message.content}`);
+		chatBox.log(`${timestamp} ${author}\n${message.content}\n`);
 	}
 
 	if(message.attachments?.size > 0){
 		if(!message.content){
-			chatBox.log(`${timestamp} ${author}:`);
+			chatBox.log(`${timestamp} ${author}`);
 		}
 
 		for(const attachment of message.attachments.values()){

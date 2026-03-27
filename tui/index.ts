@@ -6,7 +6,7 @@ import { Client, GatewayIntentBits, Events, ChannelType, TextChannel } from 'dis
 import { createSidebar } from './components/sidebar.js';
 import { createChatBox } from './components/chatbox.js';
 import { createInputBox } from './components/inputbox.js';
-import { LOGO, GUIDE } from './components/logo.js';
+import { LOGO } from './components/logo.js';
 import { setupKeyBindings } from './handlers/keyHandler.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
 import { handleChannelSelect } from './handlers/channelHandler.js';
@@ -30,14 +30,26 @@ const screen = blessed.screen({
 const sidebar = createSidebar(screen);
 const chatBox = createChatBox(screen);
 const inputBox = createInputBox(screen);
+const helpBox = blessed.box({
+	parent: screen,
+	name: 'helpBox',
+	height: 2,
+	bottom: 3,
+	left: '30%',
+	width: '70%',
+	align: 'center',
+	valign: 'middle',
+	content: chalk.hex('#99AAB5')('↑/↓ Scroll  •  PgUp/PgDn Fast Scroll  •  Ctrl+D Change Focus • /help Show Commands'),
+	tags: false,
+});
 
 sidebar.hide();
 chatBox.hide();
 inputBox.hide();
+helpBox.hide();
 
 let currentChannel: TextChannel | null = null;
 const channelMap = new Map<number, TextChannel>();
-let removeGuide: (() => void) | null = null;
 
 setupKeyBindings(screen, sidebar, chatBox, inputBox);
 setupMessageHandlers(client, chatBox, inputBox, sidebar, screen, channelMap, () => currentChannel, (channel) => { currentChannel = channel; });
@@ -103,29 +115,9 @@ client.once(Events.ClientReady, (readyClient) => {
 		sidebar.show();
 		chatBox.show();
 		inputBox.show();
+		helpBox.show();
 
 		chatBox.setContent('');
-
-		const guideBox = blessed.box({
-			parent: screen,
-			top: 0,
-			left: '30%',
-			width: '70%',
-			height: '100%-3',
-			align: 'center',
-			valign: 'middle',
-			tags: false,
-			content: chalk.hex('#99AAB5')(GUIDE),
-		});
-
-		removeGuide = () => {
-			if (!(guideBox as any).destroyed) {
-				guideBox.destroy();
-				screen.render();
-			}
-			removeGuide = null;
-		};
-		sidebar.once('select', removeGuide);
 
 		screen.render();
 
@@ -191,9 +183,6 @@ sidebar.key(['enter'], async () => {
 	const idx = (sidebar as any).selected as number;
 	const channel = channelMap.get(idx);
 	if (!channel) return;
-
-	// guideBox를 먼저 제거
-	if (removeGuide) removeGuide();
 
 	currentChannel = channel;
 	inputBox.setLabel(` # ${channel.name} `);

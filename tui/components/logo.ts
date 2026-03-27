@@ -6,17 +6,3 @@ export const LOGO = `
 ██████╔╝██║███████║╚██████╗╚██████╔╝██║  ██║██████╔╝      ██║   ╚██████╔╝██║
 ╚═════╝ ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝       ╚═╝    ╚═════╝ ╚═╝                                                                                                        
 `;
-
-export const GUIDE = `
- ╔══════════════════════════════════════════════╗
- ║                  KEYBINDINGS                 ║
- ╠═══════════════════╦══════════════════════════╣
- ║  SIDEBAR          ║  INPUT / CHAT            ║
- ╠═══════════════════╬══════════════════════════╣
- ║  ↑ / ↓  Navigate  ║  Enter    Send message   ║
- ║  Enter  Select    ║  ESC      To sidebar     ║
- ║  Ctrl+D To input  ║  ↑ / ↓    Scroll chat    ║
- ║  Ctrl+C Quit      ║  PgUp/Dn  Scroll fast    ║
- ╚═══════════════════╩══════════════════════════╝
-  ➜  Select a channel from the sidebar to begin!
-`;
