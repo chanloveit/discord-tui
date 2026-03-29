@@ -30,11 +30,11 @@ export async function renderMessage(message: Message, chatBox: Widgets.Log, show
 						chatBox.log(preview + '\n');
 					}
 					else{
-						chatBox.log(chalk.dim('  [Image preview unavailable in this terminal]'));
+						chatBox.log(chalk.dim('[Image preview unavailable in this terminal]') + '\n');
 					}
 				}
 				catch(error){
-					chatBox.log(chalk.red('  Failed to load image'));
+					chatBox.log(chalk.red('Failed to load image') + '\n');
 				}
 			}
 		}
