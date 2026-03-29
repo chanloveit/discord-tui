@@ -29,6 +29,9 @@ export async function renderMessage(message: Message, chatBox: Widgets.Log, show
 					if(preview){
 						chatBox.log(preview + '\n');
 					}
+					else{
+						chatBox.log(chalk.dim('  [Image preview unavailable in this terminal]'));
+					}
 				}
 				catch(error){
 					chatBox.log(chalk.red('  Failed to load image'));
