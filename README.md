@@ -9,16 +9,29 @@
 3. Go to "Bot" tab → "Reset Token" → Copy token
 4. Go to "Bot" tab → Enable "Presence Intent", "Server Members Intent" ,"Message Content Intent" (Privileged Gateway Intents)
 
-### 2. Configure Project
+### 2. Install Dependencies
 [Install NodeJS](https://nodejs.org/en/download)
 
 ```bash
 npm install
-npm run setup 
 ```
-→Enter your Discord bot token
 
-### 3. Invite Bot to Server
+### 3. Run the Application
+
+**Development Mode** (with hot reload):
+```bash
+npm run dev
+```
+
+**Production Mode** (build first, then run):
+```bash
+npm run build
+npm start
+```
+
+The launcher screen will appear. Press `s` to enter setup and paste your Discord bot token.
+
+### 4. Invite Bot to Server
 1. Go to "OAuth2" → "URL Generator"
 2. Select scopes: `bot`
 3. Select permissions: 
@@ -27,8 +40,3 @@ npm run setup
    - Read Message History
 4. Copy generated URL and open in browser
 5. Select server and authorize
-
-### 4. Run
-```bash
-npm run dev
-```
