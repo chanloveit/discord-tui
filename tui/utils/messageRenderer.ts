@@ -27,7 +27,7 @@ export async function renderMessage(message: Message, chatBox: Widgets.Log, show
 				try{
 					const preview = await displayImage(attachment.url);
 					if(preview){
-						chatBox.log(preview);
+						chatBox.log(preview + '\n');
 					}
 				}
 				catch(error){
