@@ -12,7 +12,9 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "dev": "tsx ./tui/index.ts"
+    "dev": "tsx ./tui/index.ts",
+    "build": "tsc",
+    "start": "node ./dist/index.js"
   },
   "devDependencies": {
     "@types/blessed": "^0.1.27",
