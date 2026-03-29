@@ -150,7 +150,10 @@ function startChatClient(): void {
 	helpBox.show();
 	chatBox.setContent(chalk.hex('#99AAB5')('Connecting to Discord...'));
 	screen.render();
-	void client.login(process.env.DISCORD_TOKEN);
+	void client.login(process.env.DISCORD_TOKEN).catch(err => {
+		chatBox.setContent(chalk.hex('#FF0000')(`Failed to connect: ${err.message}`));
+		screen.render();
+	});
 }
 
 screen.key(['enter'], () => {
