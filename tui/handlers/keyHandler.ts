@@ -1,6 +1,11 @@
 import type { Widgets } from 'blessed';
 
 export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListElement, chatBox: Widgets.Log, inputBox: Widgets.TextboxElement){
+	const scrollChat = (delta: number): void => {
+		chatBox.scroll(delta);
+		screen.render();
+	};
+
 	screen.key(['C-c'], () => {
 		process.exit(0);
 	});
@@ -11,23 +16,19 @@ export function setupKeyBindings(screen: Widgets.Screen, sidebar: Widgets.ListEl
 	});
 
 	inputBox.key(['up'], () => {
-		chatBox.scroll(-1);
-		screen.render();
+		scrollChat(-1);
 	});
 
 	inputBox.key(['down'], () => {
-		chatBox.scroll(1);
-		screen.render();
+		scrollChat(1);
 	});
 
 	inputBox.key(['pageup'], () => {
-		chatBox.scroll(-(chatBox.height as number));
-		screen.render();
+		scrollChat(-(chatBox.height as number));
 	});
 
 	inputBox.key(['pagedown'], () => {
-		chatBox.scroll(chatBox.height as number);
-		screen.render();
+		scrollChat(chatBox.height as number);
 	});
 
 	inputBox.on('keypress', (ch) => {

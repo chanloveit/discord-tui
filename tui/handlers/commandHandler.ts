@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { Client, TextChannel, DMChannel, User } from 'discord.js';
 import type { Widgets } from 'blessed';
 import { formatTime } from '../utils/formatters.js';
+import { handleChannelSelect } from './channelHandler.js';
 
 
 interface CommandContext{
@@ -35,7 +36,7 @@ const commands: Record<string, CommandHandler> = {
 		chatBox.log('');
 	},
 
-	goto: async (args, { client, chatBox, inputBox, screen, channelMap, sidebar, setCurrentChannel }) => {
+	goto: async (args, { chatBox, inputBox, screen, channelMap, sidebar, setCurrentChannel }) => {
 		if(args.length === 0){
 			chatBox.log(chalk.yellow('Example: /goto #general'));
 			chatBox.log(chalk.yellow('Example: /goto #general MyServer'));
@@ -78,24 +79,14 @@ const commands: Record<string, CommandHandler> = {
 	
 		setCurrentChannel(channel);
 		sidebar.select(index);
+		inputBox.setLabel(` # ${channel.name} `);
 
 		try{
-			const messages = await channel.messages.fetch({ limit: 10 });
-			chatBox.setContent('');
-			chatBox.setLabel(`▶${channel.guild.name} - #${channel.name}`);
-			chatBox.log(chalk.green(`✓ Moved to #${channel.name}`));
-			chatBox.log('');
-
-			messages.reverse().forEach((msg: any) => {
-				const time = formatTime(msg.createdTimestamp);
-				chatBox.log(chalk.gray(`[${time}]`) + ' ' + chalk.cyan(msg.author.username) + ': ' + msg.content);
-			});
+			await handleChannelSelect(channel, chatBox, inputBox, screen);
 		}
 		catch(error){
 			chatBox.log(chalk.red('Failed to load messages'));
 		}
-
-		screen.render();
 	},
 
 	members: async (args, { chatBox, getCurrentChannel, screen }) => {
@@ -293,3 +284,5 @@ async function findUserByUsername(client: Client, username: string, chatBox: Wid
   	return null;
 }
 
+
+//TODO: goto 명령어 수행 시  이중 포커스로 인한 키보드 입력 문제

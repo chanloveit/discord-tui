@@ -1,25 +1,31 @@
 import chalk from 'chalk';
-import { TextChannel } from 'discord.js';
+import { Message, TextChannel } from 'discord.js';
 import type { Widgets } from 'blessed';
 import { renderMessage } from '../utils/messageRenderer.js';
 
+const RECENT_MESSAGE_LIMIT = 10;
+
+async function renderChannelMessages(channelName: string, messages: Message[], chatBox: Widgets.Log): Promise<void> {
+	chatBox.setContent('');
+	chatBox.log(chalk.green(`✓ Joined #${channelName}`));
+	chatBox.log('');
+	chatBox.log(chalk.yellow('--- Recent messages ---'));
+
+	for (const message of messages) {
+		await renderMessage(message, chatBox, true);
+	}
+}
+
 export async function handleChannelSelect(channel: TextChannel, chatBox: Widgets.Log, inputBox: Widgets.TextElement, screen: Widgets.Screen): Promise<void>{
 	try{
-		const messages = await channel.messages.fetch({ limit: 10 });
-
-		chatBox.setContent('');
-		chatBox.setLabel(`▶${channel.guild.name} - #${channel.name}`);
-		chatBox.log(chalk.green(`✓ Joined #${channel.name}`));
-		chatBox.log('');
-		chatBox.log(chalk.yellow('--- Recent messages ---'));
-
+		const messages = await channel.messages.fetch({ limit: RECENT_MESSAGE_LIMIT });
 		const messagesArray = Array.from(messages.values()).reverse();
-		for (const message of messagesArray) {
-			await renderMessage(message, chatBox, true);
-		}
+
+		chatBox.setLabel(`▶${channel.guild.name} - #${channel.name}`);
+		await renderChannelMessages(channel.name, messagesArray, chatBox);
 	}
 
-	catch(error){
+	catch{
 		chatBox.log(chalk.red('Failed to load messages'));
 	}
 
