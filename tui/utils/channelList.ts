@@ -8,12 +8,17 @@ export function populateSidebar(client: Client, sidebar: Widgets.ListElement, ch
 	channelMap.clear();
 
 	client.guilds.cache.forEach((guild) => {
-		sidebarItems.push(` ▶ ${guild.name}`);
+		sidebarItems.push(`➤  ${guild.name}`);
 		itemIndex++;
 
 		const textChannels = guild.channels.cache.filter((channel) => channel.type === ChannelType.GuildText);
+		if (textChannels.size > 0) {
+			sidebarItems.push('   ▶ Textchannels');
+			itemIndex++;
+		}
+
 		textChannels.forEach((channel) => {
-			sidebarItems.push(`   # ${channel.name}`);
+			sidebarItems.push(`     # ${channel.name}`);
 			channelMap.set(itemIndex, channel as TextChannel);
 			itemIndex++;
 		});
