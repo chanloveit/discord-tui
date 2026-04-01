@@ -29,6 +29,5 @@ export async function handleChannelSelect(channel: TextChannel, chatBox: Widgets
 		chatBox.log(chalk.red('Failed to load messages'));
 	}
 
-	inputBox.focus();
 	screen.render();
 }

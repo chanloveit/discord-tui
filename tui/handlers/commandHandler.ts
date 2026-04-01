@@ -14,8 +14,8 @@ export interface CommandContext{
 	channelMap: Map<number, TextChannel>;
 	getCurrentChannel: () => TextChannel | null;
 	setCurrentChannel: (channel: TextChannel) => void;
-	currentDMChannel?: DMChannel | null;
-  	setCurrentDMChannel?: (channel: DMChannel | null) => void;
+	getCurrentDMChannel: () => DMChannel | null;
+	setCurrentDMChannel: (channel: DMChannel | null) => void;
 }
 
 type CommandHandler = (args: string[], ctx: CommandContext) => Promise<void> | void;
@@ -33,6 +33,7 @@ const commandDefinitions: CommandDefinition[] = [
 	{ name: 'members', usage: '/members', description: 'show list of members' },
 	{ name: 'clear', usage: '/clear', description: 'clear chatbox' },
 	{ name: 'dmopen', usage: '/dmopen <username>', description: 'open DM conversation with a user' },
+	{ name: 'dmclose', usage: '/dmclose', description: 'close DM and return to channel' },
 	{ name: 'dms', usage: '/dms', description: 'list open DM channels' },
 	{ name: 'quit', usage: '/quit', description: 'exit' }
 ];
@@ -141,12 +142,16 @@ const commands: Record<string, CommandHandler> = {
 		screen.render();
 	},
 
-	clear: (args, { chatBox, getCurrentChannel, screen }) => {
-		const currentChannel = getCurrentChannel();
+	clear: (_, { chatBox, getCurrentChannel, getCurrentDMChannel, screen }) => {
 		chatBox.setContent('');
-		
-		if(currentChannel){
-			chatBox.setLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
+		const dmChannel = getCurrentDMChannel();
+		if(dmChannel){
+			chatBox.setLabel(` DM - ${dmChannel.recipient?.username ?? 'Unknown'} `);
+		} else {
+			const currentChannel = getCurrentChannel();
+			if(currentChannel){
+				chatBox.setLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
+			}
 		}
 		screen.render();
 	},
@@ -156,7 +161,7 @@ const commands: Record<string, CommandHandler> = {
 	},
 
 
-	dmopen: async(args, { client, chatBox, screen, setCurrentDMChannel }) => {
+	dmopen: async(args, { client, chatBox, inputBox, screen, setCurrentDMChannel }) => {
 		if(args.length < 1){
 			chatBox.log(chalk.yellow('Usage: /dmopen <username>'));
 			chatBox.log(chalk.yellow('Example: /dmopen Alice'));
@@ -164,35 +169,68 @@ const commands: Record<string, CommandHandler> = {
 			return;
 		}
 
-		const targetUsername = args[0];
-		const targetUser = await findUserByUsername(client, targetUsername as string, chatBox, screen);
+		const targetUsername = args[0] as string;
+		const targetUser = await findUserByUsername(client, targetUsername, chatBox, screen);
 		if(!targetUser){
 			return;
 		}
 
 		try{
 			const dmChannel = await targetUser.createDM();
-			dmChannelCache.set(targetUsername as string, dmChannel);
-			setCurrentDMChannel?.(dmChannel);
-			chatBox.log(chalk.green(`✓ DM channel opened with ${chalk.cyan(targetUser.username)}`));
+			dmChannelCache.set(targetUsername, dmChannel);
+
+			// 채팅창 DM 뷰로 전환
+			chatBox.setContent('');
+			chatBox.setLabel(` DM - ${targetUser.username} `);
+			inputBox.setLabel(` @ ${targetUser.username} `);
+			chatBox.log(chalk.green(`✓ DM with ${chalk.cyan(targetUser.username)}`));
+			chatBox.log(chalk.yellow('--- Recent messages ---'));
+
+			const messages = await dmChannel.messages.fetch({ limit: 10 });
+			const messagesArray = Array.from(messages.values()).reverse();
+			for(const msg of messagesArray){
+				const time = formatTime(msg.createdTimestamp);
+				const author = msg.author.id === client.user?.id
+					? chalk.green('You')
+					: chalk.cyan(msg.author.username);
+				if(msg.content){
+					chatBox.log(`${chalk.gray(`[${time}]`)} ${author}\n${msg.content}\n`);
+				}
+			}
+
+			setCurrentDMChannel(dmChannel);
 		}
 		catch(error){
-			 chatBox.log(chalk.red(`Failed to open DM with ${targetUsername}: ${(error as Error).message}`));
+			chatBox.log(chalk.red(`Failed to open DM with ${targetUsername}: ${(error as Error).message}`));
 		}
 
 		screen.render();
 	},
 
-	dms: (args, { chatBox, screen }) => {
+	dmclose: (_, { chatBox, inputBox, screen, setCurrentDMChannel, getCurrentChannel }) => {
+		setCurrentDMChannel(null);
+		const currentChannel = getCurrentChannel();
+		if(currentChannel){
+			chatBox.setLabel(`▶${currentChannel.guild.name} - #${currentChannel.name}`);
+			inputBox.setLabel(` # ${currentChannel.name} `);
+		} else {
+			chatBox.setLabel(' Chat ');
+			inputBox.setLabel(' No channel selected ');
+		}
+		chatBox.log(chalk.gray('--- DM closed ---'));
+		screen.render();
+	},
+
+	dms: (_, { chatBox, screen }) => {
 		if(dmChannelCache.size === 0){
-			chatBox.log(chalk.yellow('No open DM channels'));
+			chatBox.log(chalk.yellow('No open DM channels. Use /dmopen <username> to start one.'));
 			screen.render();
 			return;
 		}
 
 		chatBox.log(chalk.yellow('--- Open DM Channels ---'));
-		dmChannelCache.forEach((channel, username) => {
-			chatBox.log(chalk.cyan(username) + ' (ID: ' + channel.id + ')');
+		dmChannelCache.forEach((_, username) => {
+			chatBox.log(chalk.cyan(`  /dmopen ${username}`));
 		});
 		chatBox.log('');
 		screen.render();
@@ -278,4 +316,3 @@ async function findUserByUsername(client: Client, username: string, chatBox: Wid
 }
 
 
-//TODO: goto 명령어 수행 시  이중 포커스로 인한 키보드 입력 문제

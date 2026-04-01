@@ -42,5 +42,9 @@ export function setupSidebarHandlers(sidebar: Widgets.ListElement, inputBox: Wid
 
 		inputBox.setLabel(` # ${channel.name} `);
 		await onChannelSelect(channel);
+		setImmediate(() => {
+			inputBox.focus();
+			screen.render();
+		});
 	});
 }

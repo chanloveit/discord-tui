@@ -2,7 +2,7 @@ import blessed from 'blessed';
 import 'dotenv/config';
 import chalk from 'chalk';
 
-import { Client, GatewayIntentBits, Events, TextChannel } from 'discord.js';
+import { Client, DMChannel, GatewayIntentBits, Events, TextChannel } from 'discord.js';
 import { setupKeyBindings } from './handlers/keyHandler.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
 import { handleChannelSelect } from './handlers/channelHandler.js';
@@ -17,7 +17,9 @@ const client = new Client({
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
 		GatewayIntentBits.GuildMembers,
-		GatewayIntentBits.GuildPresences
+		GatewayIntentBits.GuildPresences,
+		GatewayIntentBits.DirectMessages,
+		GatewayIntentBits.DirectMessageTyping,
 	]
 });
 
@@ -30,11 +32,18 @@ const screen = blessed.screen({
 const { sidebar, chatBox, inputBox, helpBox, launcher } = createAppLayout(screen);
 
 let currentChannel: TextChannel | null = null;
+let currentDMChannel: DMChannel | null = null;
 const channelMap = new Map<number, TextChannel>();
 let launcherLocked = false;
 
 setupKeyBindings(screen, sidebar, chatBox, inputBox);
-setupMessageHandlers(client, chatBox, inputBox, sidebar, screen, channelMap, () => currentChannel, (channel) => { currentChannel = channel; });
+setupMessageHandlers(
+	client, chatBox, inputBox, sidebar, screen, channelMap,
+	() => currentChannel,
+	(channel) => { currentChannel = channel; },
+	() => currentDMChannel,
+	(channel) => { currentDMChannel = channel; }
+);
 setupSidebarHandlers(sidebar, inputBox, screen, channelMap, async (channel) => {
 	currentChannel = channel;
 	await handleChannelSelect(channel, chatBox, inputBox, screen);
