@@ -26,6 +26,8 @@ export function setupMessageHandlers(
 		});
 	};
 
+	const lastAuthorMap = new Map<string, string>();
+
 	const commandCtx = {
 		client,
 		chatBox,
@@ -50,6 +52,7 @@ export function setupMessageHandlers(
 			if(message.content){
 				chatBox.log(`${chalk.gray(`[${time}]`)} ${author}\n${message.content}\n`);
 			}
+			lastAuthorMap.set(currentDMChannel.id, message.author.id);
 			screen.render();
 			return;
 		}
@@ -57,8 +60,9 @@ export function setupMessageHandlers(
 		// 일반 채널 수신
 		const currentChannel = getCurrentChannel();
 		if(currentChannel && message.channel.id === currentChannel.id){
-			await renderMessage(message, chatBox, true, client.user);
-			chatBox.log('');
+			const lastAuthorId = lastAuthorMap.get(currentChannel.id) || null;
+			await renderMessage(message, chatBox, true, client.user, lastAuthorId);
+			lastAuthorMap.set(currentChannel.id, message.author.id);
 			screen.render();
 		}
 	});
@@ -83,6 +87,7 @@ export function setupMessageHandlers(
 				const sentMessage = await currentDMChannel.send(message);
 				const time = formatTime(sentMessage.createdTimestamp);
 				chatBox.log(`${chalk.gray(`[${time}]`)} ${chalk.green('You')}\n${message}\n`);
+				lastAuthorMap.set(currentDMChannel.id, sentMessage.author.id);
 				resetInput();
 			}
 			catch(error){
@@ -101,7 +106,9 @@ export function setupMessageHandlers(
 
 		try{
 			const sentMessage = await currentChannel.send(message);
-			await renderMessage(sentMessage, chatBox, true);
+			const lastAuthorId = lastAuthorMap.get(currentChannel.id) || null;
+			await renderMessage(sentMessage, chatBox, true, client.user, lastAuthorId);
+			lastAuthorMap.set(currentChannel.id, sentMessage.author.id);
 			resetInput();
 		}
 		

@@ -12,22 +12,42 @@ function highlightMentions(content: string, currentUser: User | null): string {
 	return content.replace(userMentionPattern, chalk.bgYellow.black(`@${currentUser.username}`));
 }
 
-export async function renderMessage(message: Message, chatBox: Widgets.Log, showImages: boolean = false, currentUser: User | null = null): Promise<void>{
+function getMessageStatus(message: Message): string {
+	const status: string[] = [];
+	if (!message.content && message.attachments.size === 0) {
+		status.push(chalk.red('(message deleted)'));
+	}
+
+	else if (message.editedTimestamp) {
+		status.push(chalk.dim('(edited)'));
+	}
+	
+	return status.length > 0 ? ' ' + status.join(' ') : '';
+}
+
+export async function renderMessage(
+	message: Message, 
+	chatBox: Widgets.Log, 
+	showImages: boolean = false, 
+	currentUser: User | null = null,
+	lastAuthorId: string | null = null
+): Promise<void> {
 	const time = formatTime(message.createdTimestamp);
 	const author = chalk.cyan(message.author.username);
 	const timestamp = chalk.gray(`[${time}]`);
+	const isGrouped = lastAuthorId === message.author.id;
 
+	if (!isGrouped) {
+		chatBox.log(`${timestamp} ${author}`);
+	}
 
 	if(message.content){
 		const highlightedContent = highlightMentions(message.content, currentUser);
-		chatBox.log(`${timestamp} ${author}\n${highlightedContent}\n`);
+		const messageStatus = getMessageStatus(message);
+		chatBox.log(`${highlightedContent}${messageStatus}`);
 	}
 
 	if(message.attachments?.size > 0){
-		if(!message.content){
-			chatBox.log(`${timestamp} ${author}`);
-		}
-
 		for(const attachment of message.attachments.values()){
 			chatBox.log(`  ${chalk.blue(`${attachment.name}`)}`);
 			chatBox.log(`  ${chalk.dim(`→ ${attachment.url}`)}`);
@@ -48,4 +68,6 @@ export async function renderMessage(message: Message, chatBox: Widgets.Log, show
 			}
 		}
 	}
+
+	chatBox.log('');
 }

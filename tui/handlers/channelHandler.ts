@@ -11,8 +11,10 @@ async function renderChannelMessages(channelName: string, messages: Message[], c
 	chatBox.log('');
 	chatBox.log(chalk.yellow('--- Recent messages ---'));
 
+	let lastAuthorId: string | null = null;
 	for (const message of messages) {
-		await renderMessage(message, chatBox, true);
+		await renderMessage(message, chatBox, true, null, lastAuthorId);
+		lastAuthorId = message.author.id;
 	}
 }
 
