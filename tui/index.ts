@@ -46,7 +46,7 @@ setupMessageHandlers(
 );
 setupSidebarHandlers(sidebar, inputBox, screen, channelMap, async (channel) => {
 	currentChannel = channel;
-	await handleChannelSelect(channel, chatBox, inputBox, screen);
+	await handleChannelSelect(channel, chatBox, inputBox, screen, client.user);
 });
 
 client.once(Events.ClientReady, () => {

@@ -53,7 +53,7 @@ const commands: Record<string, CommandHandler> = {
 		renderHelp(chatBox);
 	},
 
-	goto: async (args, { chatBox, inputBox, screen, channelMap, sidebar, setCurrentChannel }) => {
+	goto: async (args, { client, chatBox, inputBox, screen, channelMap, sidebar, setCurrentChannel }) => {
 		if(args.length === 0){
 			chatBox.log(chalk.yellow('Example: /goto #general'));
 			chatBox.log(chalk.yellow('Example: /goto #general MyServer'));
@@ -99,7 +99,7 @@ const commands: Record<string, CommandHandler> = {
 		inputBox.setLabel(` # ${channel.name} `);
 
 		try{
-			await handleChannelSelect(channel, chatBox, inputBox, screen);
+			await handleChannelSelect(channel, chatBox, inputBox, screen, client.user);
 		}
 		catch(error){
 			chatBox.log(chalk.red('Failed to load messages'));

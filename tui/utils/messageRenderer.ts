@@ -4,6 +4,15 @@ import { formatTime } from './formatters.js';
 import { displayImage } from './imageRenderer.js';
 import type { Widgets } from 'blessed';
 
+function formatAuthorLabel(message: Message, currentUser: User | null): string {
+	if(currentUser && message.author.id === currentUser.id){
+		return chalk.green('👤 You');
+	}
+
+	const authorEmoji = message.author.bot ? '🤖' : '👤';
+	return chalk.cyan(`${authorEmoji} ${message.author.username}`);
+}
+
 function highlightMentions(content: string, currentUser: User | null): string {
 	if (!currentUser) return content;
 	
@@ -33,7 +42,7 @@ export async function renderMessage(
 	lastAuthorId: string | null = null
 ): Promise<void> {
 	const time = formatTime(message.createdTimestamp);
-	const author = chalk.cyan(message.author.username);
+	const author = formatAuthorLabel(message, currentUser);
 	const timestamp = chalk.gray(`[${time}]`);
 	const isGrouped = lastAuthorId === message.author.id;
 

@@ -48,7 +48,8 @@ export function setupMessageHandlers(
 		const currentDMChannel = getCurrentDMChannel();
 		if(currentDMChannel && message.channel.id === currentDMChannel.id){
 			const time = formatTime(message.createdTimestamp);
-			const author = chalk.cyan(message.author.username);
+			const authorEmoji = message.author.bot ? '🤖' : '👤';
+			const author = chalk.cyan(`${authorEmoji} ${message.author.username}`);
 			if(message.content){
 				chatBox.log(`${chalk.gray(`[${time}]`)} ${author}\n${message.content}\n`);
 			}
@@ -86,7 +87,7 @@ export function setupMessageHandlers(
 			try{
 				const sentMessage = await currentDMChannel.send(message);
 				const time = formatTime(sentMessage.createdTimestamp);
-				chatBox.log(`${chalk.gray(`[${time}]`)} ${chalk.green('You')}\n${message}\n`);
+				chatBox.log(`${chalk.gray(`[${time}]`)} ${chalk.green('👤 You')}\n${message}\n`);
 				lastAuthorMap.set(currentDMChannel.id, sentMessage.author.id);
 				resetInput();
 			}

@@ -1,11 +1,11 @@
 import chalk from 'chalk';
-import { Message, TextChannel } from 'discord.js';
+import { Message, TextChannel, User } from 'discord.js';
 import type { Widgets } from 'blessed';
 import { renderMessage } from '../utils/messageRenderer.js';
 
 const RECENT_MESSAGE_LIMIT = 10;
 
-async function renderChannelMessages(channelName: string, messages: Message[], chatBox: Widgets.Log): Promise<void> {
+async function renderChannelMessages(channelName: string, messages: Message[], chatBox: Widgets.Log, currentUser: User | null): Promise<void> {
 	chatBox.setContent('');
 	chatBox.log(chalk.green(`✓ Joined #${channelName}`));
 	chatBox.log('');
@@ -13,18 +13,18 @@ async function renderChannelMessages(channelName: string, messages: Message[], c
 
 	let lastAuthorId: string | null = null;
 	for (const message of messages) {
-		await renderMessage(message, chatBox, true, null, lastAuthorId);
+		await renderMessage(message, chatBox, true, currentUser, lastAuthorId);
 		lastAuthorId = message.author.id;
 	}
 }
 
-export async function handleChannelSelect(channel: TextChannel, chatBox: Widgets.Log, inputBox: Widgets.TextElement, screen: Widgets.Screen): Promise<void>{
+export async function handleChannelSelect(channel: TextChannel, chatBox: Widgets.Log, inputBox: Widgets.TextElement, screen: Widgets.Screen, currentUser: User | null = null): Promise<void>{
 	try{
 		const messages = await channel.messages.fetch({ limit: RECENT_MESSAGE_LIMIT });
 		const messagesArray = Array.from(messages.values()).reverse();
 
 		chatBox.setLabel(`▶${channel.guild.name} - #${channel.name}`);
-		await renderChannelMessages(channel.name, messagesArray, chatBox);
+		await renderChannelMessages(channel.name, messagesArray, chatBox, currentUser);
 	}
 
 	catch{
