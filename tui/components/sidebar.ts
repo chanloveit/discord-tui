@@ -36,7 +36,7 @@ export function createSidebar(screen: blessed.Widgets.Screen){
 		} as any,
 		keys: false,
 		vi: true,
-		mouse: true,
+		mouse: false,
 		tags: false,
 		interactive: true,
 		invertSelected: false
