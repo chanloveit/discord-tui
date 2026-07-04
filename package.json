@@ -2,6 +2,7 @@
   "name": "discord-tui",
   "type": "module",
   "dependencies": {
+    "@discordjs/voice": "^0.19.2",
     "blessed": "^0.1.81",
     "chalk": "^5.6.2",
     "discord.js": "^14.25.1",

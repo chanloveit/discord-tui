@@ -8,11 +8,12 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
 
-import { ChannelType, Client, DMChannel, GatewayIntentBits, Events, TextChannel } from 'discord.js';
+import { ChannelType, Client, DMChannel, GatewayIntentBits, Events, TextChannel, VoiceChannel } from 'discord.js';
+import { entersState, joinVoiceChannel, VoiceConnectionStatus, type VoiceConnection } from '@discordjs/voice';
 import { patchBlessedUnicode } from './utils/unicodePatch.js';
 import { setupKeyBindings } from './handlers/keyHandler.js';
 import { setupMessageHandlers } from './handlers/messageHandler.js';
-import { handleChannelSelect } from './handlers/channelHandler.js';
+import { handleChannelSelect, handleVoiceChannelSelect } from './handlers/channelHandler.js';
 import { setupSidebarHandlers } from './handlers/sidebarHandler.js';
 import { runSetup } from './setup.js';
 import { createBlessedUIBridge } from './ui/blessedBridge.js';
@@ -20,7 +21,6 @@ import { buildSidebarModel } from './utils/channelList.js';
 import type { SelectableChannel } from './utils/channelList.js';
 import { showLauncher } from './ui/launcher.js';
 import { clear } from 'console';
-import { safeChannelName, safeGuildName } from './utils/uiText.js';
 
 const launcherResult = await showLauncher();
 const keepAlive = setInterval(() => {}, 1000);
@@ -39,6 +39,7 @@ const client = new Client({
 		GatewayIntentBits.Guilds,
 		GatewayIntentBits.GuildMessages,
 		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildVoiceStates,
 		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildPresences,
 		GatewayIntentBits.DirectMessages,
@@ -60,9 +61,33 @@ const ui = createBlessedUIBridge(screen);
 
 let currentChannel: TextChannel | null = null;
 let currentDMChannel: DMChannel | null = null;
+let currentVoiceChannel: VoiceChannel | null = null;
+let activeVoiceConnection: VoiceConnection | null = null;
 let channelMap = new Map<number, SelectableChannel>();
 let unreadChannels = new Set<string>();
 let mentionChannels = new Set<string>();
+
+function disconnectVoiceConnection(): void {
+	if (!activeVoiceConnection) {
+		return;
+	}
+
+	activeVoiceConnection.destroy();
+	activeVoiceConnection = null;
+}
+
+async function connectVoiceChannel(channel: VoiceChannel): Promise<void> {
+	const connection = joinVoiceChannel({
+		channelId: channel.id,
+		guildId: channel.guild.id,
+		adapterCreator: channel.guild.voiceAdapterCreator,
+		selfDeaf: false,
+		selfMute: false,
+	});
+
+	activeVoiceConnection = connection;
+	await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+}
 
 function updateSidebarWithUnreads(): void {
 	const selectedIndex = ui.getSidebarSelectedIndex();
@@ -112,31 +137,54 @@ client.once(Events.ClientReady, () => {
 
 	setupSidebarHandlers(ui, channelMap, model.items.length, async (channel) => {
 		if (channel.type === ChannelType.GuildText) {
+			disconnectVoiceConnection();
 			currentChannel = channel;
 			currentDMChannel = null;
+			currentVoiceChannel = null;
 			markChannelAsRead(channel.id);
 			await handleChannelSelect(channel, ui, client.user);
 			return;
 		}
 
+		disconnectVoiceConnection();
 		currentChannel = null;
 		currentDMChannel = null;
-		const channelDisplayName = safeChannelName(channel.name);
-		const guildDisplayName = safeGuildName(channel.guild.name);
+		currentVoiceChannel = channel;
+		handleVoiceChannelSelect(channel, ui, client.user);
 
-		ui.showChatUI();
-		ui.clearChat();
-		ui.setChatContent('');
-		ui.clearInput();
-		ui.setChatLabel(` # ${channelDisplayName} `);
-		ui.setInputLabel(' Voice join coming soon ');
-		ui.setTitleBar(guildDisplayName, channelDisplayName, 'connected');
-		ui.setStatusBar(chalk.hex('#FAA61A')(`Voice channel selected: ${channelDisplayName} (join coming soon)`));
-		ui.appendChat('');
-		ui.appendChat(chalk.hex('#72767D')(`  Server: ${guildDisplayName}`));
-		ui.appendChat('');
-		ui.appendChat(chalk.hex('#FAA61A')('  Voice join is not implemented yet.'));
-		ui.render();
+		try {
+			await connectVoiceChannel(channel);
+			ui.setStatusBar(chalk.hex('#57F287')(`Joined voice #${channel.name}`));
+			ui.render();
+		}
+		catch (error) {
+			if (currentVoiceChannel?.id === channel.id) {
+				ui.setTitleBar(channel.guild.name, channel.name, 'disconnected');
+				ui.setStatusBar(chalk.hex('#ED4245')(`Failed to join voice #${channel.name}`));
+				ui.appendChat(chalk.hex('#ED4245')(`  ⊗ Failed to join voice: ${(error as Error).message}`));
+				ui.render();
+			}
+		}
+	});
+
+	client.on(Events.VoiceStateUpdate, (oldState, newState) => {
+		if (!currentVoiceChannel) {
+			return;
+		}
+
+		if (oldState.channelId === currentVoiceChannel.id || newState.channelId === currentVoiceChannel.id) {
+			handleVoiceChannelSelect(currentVoiceChannel, ui, client.user);
+		}
+	});
+
+	client.on(Events.PresenceUpdate, (_oldPresence, newPresence) => {
+		if (!currentVoiceChannel) {
+			return;
+		}
+
+		if (newPresence && currentVoiceChannel.members.has(newPresence.userId)) {
+			handleVoiceChannelSelect(currentVoiceChannel, ui, client.user);
+		}
 	});
 
 	if(model.firstChannelIndex !== undefined){
