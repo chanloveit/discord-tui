@@ -52,5 +52,7 @@ To prevent layout distortion in the terminal UI, emoji in channel and server nam
    - View Channels
    - Send Messages
    - Read Message History
+   - Connect
+   - Speak
 4. Copy generated URL and open in browser
 5. Select server and authorize
