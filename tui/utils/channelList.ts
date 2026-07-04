@@ -20,7 +20,8 @@ function stripAnsiCodes(text: string): string {
 export function buildSidebarModel(
 	client: Client,
 	unreadChannels: Set<string> = new Set(),
-	mentionChannels: Set<string> = new Set()
+	mentionChannels: Set<string> = new Set(),
+	connectedVoiceChannelId: string | null = null
 ): SidebarModel {
 	const sidebarItems: string[] = [];
 	const channelMap = new Map<number, SelectableChannel>();
@@ -72,7 +73,9 @@ export function buildSidebarModel(
 		}
 
 		voiceChannels.forEach((channel) => {
-			const channelLabel = chalk.hex('#99AAB5')(`# ${safeChannelName(channel.name)}`);
+			const channelLabel = channel.id === connectedVoiceChannelId
+				? chalk.green.bold(`# ${safeChannelName(channel.name)}`)
+				: chalk.hex('#99AAB5')(`# ${safeChannelName(channel.name)}`);
 			sidebarItems.push(padItem(`     ${channelLabel}`));
 			channelMap.set(itemIndex, channel as VoiceChannel);
 			itemIndex++;

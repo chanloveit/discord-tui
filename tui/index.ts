@@ -61,23 +61,67 @@ const ui = createBlessedUIBridge(screen);
 
 let currentChannel: TextChannel | null = null;
 let currentDMChannel: DMChannel | null = null;
-let currentVoiceChannel: VoiceChannel | null = null;
+let viewedVoiceChannel: VoiceChannel | null = null;
+let connectedVoiceChannel: VoiceChannel | null = null;
 let activeVoiceConnection: VoiceConnection | null = null;
 let channelMap = new Map<number, SelectableChannel>();
 let unreadChannels = new Set<string>();
 let mentionChannels = new Set<string>();
 
-function disconnectVoiceConnection(): void {
+function disconnectVoiceConnection(): boolean {
 	if (!activeVoiceConnection) {
-		return;
+		connectedVoiceChannel = null;
+		updateSidebarWithUnreads();
+		return false;
 	}
 
 	activeVoiceConnection.destroy();
 	activeVoiceConnection = null;
+	connectedVoiceChannel = null;
+	updateSidebarWithUnreads();
+	return true;
 }
 
-async function connectVoiceChannel(channel: VoiceChannel): Promise<void> {
-	const connection = joinVoiceChannel({
+async function disconnectVoiceConnectionGracefully(): Promise<boolean> {
+	if (!activeVoiceConnection) {
+		connectedVoiceChannel = null;
+		updateSidebarWithUnreads();
+		return false;
+	}
+
+	const connection = activeVoiceConnection;
+
+	try {
+		connection.disconnect();
+		await entersState(connection, VoiceConnectionStatus.Disconnected, 2_000);
+	}
+	catch {
+		// fallback to destroy below when disconnect state is not observed in time
+	}
+
+	connection.destroy();
+
+	try {
+		await entersState(connection, VoiceConnectionStatus.Destroyed, 1_000);
+	}
+	catch {
+		// destroyed state can already be final; proceed with shutdown regardless
+	}
+
+	activeVoiceConnection = null;
+	connectedVoiceChannel = null;
+	updateSidebarWithUnreads();
+	return true;
+}
+
+async function switchVoiceChannel(channel: VoiceChannel): Promise<void> {
+	if (activeVoiceConnection && connectedVoiceChannel?.id === channel.id) {
+		return;
+	}
+
+	disconnectVoiceConnection();
+
+	const nextConnection = joinVoiceChannel({
 		channelId: channel.id,
 		guildId: channel.guild.id,
 		adapterCreator: channel.guild.voiceAdapterCreator,
@@ -85,13 +129,51 @@ async function connectVoiceChannel(channel: VoiceChannel): Promise<void> {
 		selfMute: false,
 	});
 
-	activeVoiceConnection = connection;
-	await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+	await entersState(nextConnection, VoiceConnectionStatus.Ready, 10_000);
+	activeVoiceConnection = nextConnection;
+	connectedVoiceChannel = channel;
+	updateSidebarWithUnreads();
+}
+
+let isShuttingDown = false;
+let shutdownPromise: Promise<void> | null = null;
+
+async function shutdown(exitCode: number = 0): Promise<void> {
+	if (isShuttingDown) {
+		if (shutdownPromise) {
+			await shutdownPromise;
+		}
+		return;
+	}
+
+	isShuttingDown = true;
+	shutdownPromise = (async () => {
+		await disconnectVoiceConnectionGracefully();
+
+		try {
+			client.destroy();
+		}
+		catch {
+			// ignore client teardown failures during shutdown
+		}
+
+		try {
+			screen.destroy();
+		}
+		catch {
+			// ignore UI teardown failures during shutdown
+		}
+
+		clearInterval(keepAlive);
+		process.exit(exitCode);
+	})();
+
+	await shutdownPromise;
 }
 
 function updateSidebarWithUnreads(): void {
 	const selectedIndex = ui.getSidebarSelectedIndex();
-	const model = buildSidebarModel(client, unreadChannels, mentionChannels);
+	const model = buildSidebarModel(client, unreadChannels, mentionChannels, connectedVoiceChannel?.id ?? null);
 	channelMap = model.channelMap;
 	ui.setSidebarItems(model.items);
 
@@ -119,46 +201,70 @@ function markChannelAsRead(channelId: string): void {
 	updateSidebarWithUnreads();
 }
 
-setupKeyBindings(ui);
+setupKeyBindings(ui, () => {
+	void shutdown(0);
+});
 setupMessageHandlers(
 	client, ui, channelMap,
 	() => currentChannel,
-	(channel) => { currentChannel = channel; },
+	(channel) => {
+		currentChannel = channel;
+		viewedVoiceChannel = null;
+	},
 	() => currentDMChannel,
-	(channel) => { currentDMChannel = channel; },
-	markChannelAsUnread
+	(channel) => {
+		currentDMChannel = channel;
+		if (channel) {
+			viewedVoiceChannel = null;
+		}
+	},
+	markChannelAsUnread,
+	{
+		leaveVoiceChannel: () => disconnectVoiceConnection(),
+		isVoiceConnected: () => activeVoiceConnection !== null,
+		requestQuit: async () => {
+			await shutdown(0);
+		},
+	}
 );
+
+process.once('SIGINT', () => {
+	void shutdown(0);
+});
+
+process.once('SIGTERM', () => {
+	void shutdown(0);
+});
 
 client.once(Events.ClientReady, () => {
 	clearInterval(keepAlive);
-	const model = buildSidebarModel(client, unreadChannels, mentionChannels);
+	const model = buildSidebarModel(client, unreadChannels, mentionChannels, connectedVoiceChannel?.id ?? null);
 	channelMap = model.channelMap;
 	ui.setSidebarItems(model.items);
 
 	setupSidebarHandlers(ui, channelMap, model.items.length, async (channel) => {
 		if (channel.type === ChannelType.GuildText) {
-			disconnectVoiceConnection();
 			currentChannel = channel;
 			currentDMChannel = null;
-			currentVoiceChannel = null;
+			viewedVoiceChannel = null;
 			markChannelAsRead(channel.id);
 			await handleChannelSelect(channel, ui, client.user);
 			return;
 		}
 
-		disconnectVoiceConnection();
 		currentChannel = null;
 		currentDMChannel = null;
-		currentVoiceChannel = channel;
+		viewedVoiceChannel = channel;
 		handleVoiceChannelSelect(channel, ui, client.user);
 
 		try {
-			await connectVoiceChannel(channel);
+			await switchVoiceChannel(channel);
 			ui.setStatusBar(chalk.hex('#57F287')(`Joined voice #${channel.name}`));
 			ui.render();
 		}
 		catch (error) {
-			if (currentVoiceChannel?.id === channel.id) {
+			if (viewedVoiceChannel?.id === channel.id) {
+				disconnectVoiceConnection();
 				ui.setTitleBar(channel.guild.name, channel.name, 'disconnected');
 				ui.setStatusBar(chalk.hex('#ED4245')(`Failed to join voice #${channel.name}`));
 				ui.appendChat(chalk.hex('#ED4245')(`  ⊗ Failed to join voice: ${(error as Error).message}`));
@@ -168,22 +274,22 @@ client.once(Events.ClientReady, () => {
 	});
 
 	client.on(Events.VoiceStateUpdate, (oldState, newState) => {
-		if (!currentVoiceChannel) {
+		if (!viewedVoiceChannel) {
 			return;
 		}
 
-		if (oldState.channelId === currentVoiceChannel.id || newState.channelId === currentVoiceChannel.id) {
-			handleVoiceChannelSelect(currentVoiceChannel, ui, client.user);
+		if (oldState.channelId === viewedVoiceChannel.id || newState.channelId === viewedVoiceChannel.id) {
+			handleVoiceChannelSelect(viewedVoiceChannel, ui, client.user);
 		}
 	});
 
 	client.on(Events.PresenceUpdate, (_oldPresence, newPresence) => {
-		if (!currentVoiceChannel) {
+		if (!viewedVoiceChannel) {
 			return;
 		}
 
-		if (newPresence && currentVoiceChannel.members.has(newPresence.userId)) {
-			handleVoiceChannelSelect(currentVoiceChannel, ui, client.user);
+		if (newPresence && viewedVoiceChannel.members.has(newPresence.userId)) {
+			handleVoiceChannelSelect(viewedVoiceChannel, ui, client.user);
 		}
 	});
 

@@ -30,7 +30,12 @@ export function setupMessageHandlers(
 	setCurrentChannel: (channel: TextChannel) => void,
 	getCurrentDMChannel: () => DMChannel | null,
 	setCurrentDMChannel: (channel: DMChannel | null) => void,
-	markChannelAsUnread: (channelId: string, isMention: boolean) => void
+	markChannelAsUnread: (channelId: string, isMention: boolean) => void,
+	lifecycle?: {
+		leaveVoiceChannel?: () => Promise<boolean> | boolean;
+		isVoiceConnected?: () => boolean;
+		requestQuit?: () => Promise<void> | void;
+	}
 ) {
 	let mentionCandidates: MentionCandidate[] = [];
 	let selectedMentionIndex = 0;
@@ -254,6 +259,9 @@ export function setupMessageHandlers(
 		setCurrentChannel,
 		getCurrentDMChannel,
 		setCurrentDMChannel,
+		leaveVoiceChannel: lifecycle?.leaveVoiceChannel,
+		isVoiceConnected: lifecycle?.isVoiceConnected,
+		requestQuit: lifecycle?.requestQuit,
 	};
 
 	const reloadCurrentDMChannel = async (dmChannel: DMChannel): Promise<void> => {

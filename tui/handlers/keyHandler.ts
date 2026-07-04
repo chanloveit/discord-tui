@@ -16,13 +16,18 @@ export function setupKeyBindings(ui: Pick<UIBridge,
 	'hideAttachmentModal' |
 	'scrollAttachmentModal' |
 	'getAttachmentModalHeight'
->){
+>, onExit?: () => void){
 	const scrollChat = (delta: number): void => {
 		ui.scrollChat(delta);
 		ui.render();
 	};
 
 	ui.onGlobalKey(['C-c'], () => {
+		if (onExit) {
+			onExit();
+			return;
+		}
+
 		process.exit(0);
 	});
 

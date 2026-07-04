@@ -21,6 +21,9 @@ export interface CommandContext{
 	setCurrentChannel: (channel: TextChannel) => void;
 	getCurrentDMChannel: () => DMChannel | null;
 	setCurrentDMChannel: (channel: DMChannel | null) => void;
+	leaveVoiceChannel?: () => Promise<boolean> | boolean;
+	isVoiceConnected?: () => boolean;
+	requestQuit?: () => Promise<void> | void;
 }
 
 type CommandHandler = (args: string[], ctx: CommandContext) => Promise<void> | void;
@@ -49,6 +52,7 @@ const commandDefinitions: CommandDefinition[] = [
 	{ name: 'attachments', usage: '/attachments', description: 'list recent attachments in current session' },
 	{ name: 'open', usage: '/open <number>', description: 'open attachment URL in browser' },
 	{ name: 'download', usage: '/download <number> [path]', description: 'download attachment to file path' },
+	{ name: 'voiceleave', usage: '/voiceleave', description: 'leave currently connected voice channel' },
 	{ name: 'quit', usage: '/quit', description: 'exit' }
 ];
 
@@ -184,7 +188,38 @@ const commands: Record<string, CommandHandler> = {
 		ui.render();
 	},
 
-	quit: () => {
+	voiceleave: async (_, { ui, leaveVoiceChannel, isVoiceConnected }) => {
+		if (isVoiceConnected && !isVoiceConnected()) {
+			ui.appendChat(chalk.hex('#FAA61A')('  ! Not connected to any voice channel'));
+			ui.render();
+			return;
+		}
+
+		if (!leaveVoiceChannel) {
+			ui.appendChat(chalk.hex('#ED4245')('  ⊗ Voice leave is not available in this context'));
+			ui.render();
+			return;
+		}
+
+		const left = await leaveVoiceChannel();
+		if (left) {
+			ui.appendChat(chalk.hex('#43B581')('  Left voice channel'));
+		} else {
+			ui.appendChat(chalk.hex('#FAA61A')('  ! Not connected to any voice channel'));
+		}
+		ui.render();
+	},
+
+	leavevoice: async (args, ctx) => {
+		await commands.voiceleave(args, ctx);
+	},
+
+	quit: async (_, { requestQuit }) => {
+		if (requestQuit) {
+			await requestQuit();
+			return;
+		}
+
 		process.exit(0);
 	},
 
@@ -402,10 +437,10 @@ function getActiveChannelId(ctx: CommandContext): string | null {
 
 function getCommandContextWeight(commandName: string, inDM: boolean): number {
 	if (inDM) {
-		return ['dmclose', 'dms', 'attachments', 'open', 'download', 'whois'].includes(commandName) ? 5 : 0;
+		return ['dmclose', 'dms', 'attachments', 'open', 'download', 'whois', 'voiceleave', 'leavevoice'].includes(commandName) ? 5 : 0;
 	}
 
-	return ['goto', 'members', 'attachments', 'open', 'download', 'whois'].includes(commandName) ? 5 : 0;
+	return ['goto', 'members', 'attachments', 'open', 'download', 'whois', 'voiceleave', 'leavevoice'].includes(commandName) ? 5 : 0;
 }
 
 function applyArgumentReplacement(tokens: string[], hasTrailingSpace: boolean, replacement: string): string {
