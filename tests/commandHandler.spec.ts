@@ -260,6 +260,46 @@ describe('commandHandler', () => {
     expect(suggestions.some((item) => item.insertValue === '/dmopen ')).toBe(true);
   });
 
+  it('leaves voice channel via /voiceleave when connected', async () => {
+    const ui = createMockUI();
+    const leaveVoiceChannel = vi.fn(async () => true);
+    const ctx = {
+      client: { guilds: { cache: new Map() }, user: { id: 'bot' } },
+      ui,
+      channelMap: new Map(),
+      getCurrentChannel: () => null,
+      setCurrentChannel: vi.fn(),
+      getCurrentDMChannel: () => null,
+      setCurrentDMChannel: vi.fn(),
+      isVoiceConnected: () => true,
+      leaveVoiceChannel,
+    } as any;
+
+    const result = await executeCommandByName('voiceleave', [], ctx);
+    expect(result).toBe(true);
+    expect(leaveVoiceChannel).toHaveBeenCalled();
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Left voice channel'));
+  });
+
+  it('runs graceful quit callback for /quit', async () => {
+    const ui = createMockUI();
+    const requestQuit = vi.fn();
+    const ctx = {
+      client: { guilds: { cache: new Map() }, user: { id: 'bot' } },
+      ui,
+      channelMap: new Map(),
+      getCurrentChannel: () => null,
+      setCurrentChannel: vi.fn(),
+      getCurrentDMChannel: () => null,
+      setCurrentDMChannel: vi.fn(),
+      requestQuit,
+    } as any;
+
+    const result = await executeCommandByName('quit', [], ctx);
+    expect(result).toBe(true);
+    expect(requestQuit).toHaveBeenCalled();
+  });
+
   it('returns attachment index suggestions for /open', () => {
     vi.mocked(listRecentAttachmentsForChannel).mockReturnValue([
       {
