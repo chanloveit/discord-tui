@@ -4,7 +4,7 @@ vi.mock('../tui/utils/messageRenderer.js', () => ({
   renderMessage: vi.fn(async () => undefined),
 }));
 
-import { handleChannelSelect } from '../tui/handlers/channelHandler.js';
+import { handleChannelSelect, handleVoiceChannelSelect } from '../tui/handlers/channelHandler.js';
 import { renderMessage } from '../tui/utils/messageRenderer.js';
 
 describe('channelHandler', () => {
@@ -58,6 +58,57 @@ describe('channelHandler', () => {
 
     expect(ui.setTitleBar).toHaveBeenCalledWith('My Server', 'general', 'disconnected');
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Failed to load messages'));
+    expect(ui.render).toHaveBeenCalled();
+  });
+
+  it('renders voice channel member list when a voice channel is selected', () => {
+    const channel = {
+      name: 'voice-room',
+      guild: { name: 'My Server' },
+      members: {
+        values: () => [
+          {
+            id: 'bot',
+            displayName: 'Bot User',
+            user: { username: 'BotUser' },
+            voice: {
+              selfMute: false,
+              serverMute: false,
+              selfDeaf: false,
+              serverDeaf: false,
+              streaming: false,
+              selfVideo: false,
+            },
+          },
+          {
+            id: 'u1',
+            displayName: 'Alice',
+            user: { username: 'Alice' },
+            voice: {
+              selfMute: true,
+              serverMute: false,
+              selfDeaf: false,
+              serverDeaf: false,
+              streaming: true,
+              selfVideo: false,
+            },
+          },
+        ],
+      },
+    } as any;
+
+    handleVoiceChannelSelect(channel, ui, { id: 'bot' } as any);
+
+    expect(ui.setTitleBar).toHaveBeenCalledWith('My Server', 'voice-room', 'connected');
+    expect(ui.setStatusBar).toHaveBeenCalledWith(expect.stringContaining('Connected to voice #voice-room'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Voice Members (2)'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Bot User'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('(bot)'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('you'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Alice'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('(u1)'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('muted'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('streaming'));
     expect(ui.render).toHaveBeenCalled();
   });
 });
