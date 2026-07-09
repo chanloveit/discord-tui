@@ -68,15 +68,20 @@ export function buildSidebarModel(
 				sidebarItems.push('');
 				itemIndex++;
 			}
-			sidebarItems.push(padItem('   ▶ Voicechannels'));
+			sidebarItems.push(padItem('   ▶ Voice'));
 			itemIndex++;
 		}
 
 		voiceChannels.forEach((channel) => {
-			const channelLabel = channel.id === connectedVoiceChannelId
-				? chalk.green.bold(`# ${safeChannelName(channel.name)}`)
-				: chalk.hex('#99AAB5')(`# ${safeChannelName(channel.name)}`);
-			sidebarItems.push(padItem(`     ${channelLabel}`));
+			const memberCount = (channel as VoiceChannel).members.size;
+			const countLabel = memberCount > 0 ? ` (${memberCount})` : '';
+			const isConnected = channel.id === connectedVoiceChannelId;
+			const icon = isConnected ? chalk.green.bold('◉') : '○';
+			const channelName = safeChannelName(channel.name);
+			const nameLabel = isConnected
+				? chalk.green.bold(`◉ ${channelName}`)
+				: `○ ${channelName}`;
+			sidebarItems.push(padItem(`   ${icon.length > 0 ? '' : ''}  ${nameLabel}${countLabel}`));
 			channelMap.set(itemIndex, channel as VoiceChannel);
 			itemIndex++;
 		});

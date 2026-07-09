@@ -8,41 +8,39 @@ import type { UIBridge } from '../ui/types.js';
 const RECENT_MESSAGE_LIMIT = 50;
 let activeChannelLoadId = 0;
 
-function formatVoiceMemberState(member: GuildMember, currentUser: User | null): string {
-	const states: string[] = [];
-	const presenceStatus = member.presence?.status ?? 'offline';
+function presenceDot(member: GuildMember): string {
+	const status = member.presence?.status ?? 'offline';
+	if (status === 'online') return chalk.hex('#57F287')('●');
+	if (status === 'idle')   return chalk.hex('#FEE75C')('◐');
+	if (status === 'dnd')    return chalk.hex('#ED4245')('●');
+	return chalk.hex('#747F8D')('○');
+}
 
-	if (presenceStatus === 'online') {
-		states.push(chalk.hex('#57F287')('online'));
-	} else if (presenceStatus === 'idle') {
-		states.push(chalk.hex('#FEE75C')('idle'));
-	} else if (presenceStatus === 'dnd') {
-		states.push(chalk.hex('#ED4245')('dnd'));
-	} else {
-		states.push(chalk.hex('#747F8D')('offline'));
-	}
+function formatVoiceMemberState(member: GuildMember, currentUser: User | null): string {
+	const badges: string[] = [];
 
 	if (member.id === currentUser?.id) {
-		states.push(chalk.hex('#5865F2')('you'));
+		badges.push(chalk.hex('#5865F2').bold('you'));
 	}
-	if (member.voice.selfMute || member.voice.serverMute) {
-		states.push(chalk.hex('#ED4245')('muted'));
+	if (member.voice.serverMute) {
+		badges.push(chalk.hex('#ED4245')('server-muted'));
+	} else if (member.voice.selfMute) {
+		badges.push(chalk.hex('#ED4245')('muted'));
 	}
-	if (member.voice.selfDeaf || member.voice.serverDeaf) {
-		states.push(chalk.hex('#FEE75C')('deafened'));
+	if (member.voice.serverDeaf) {
+		badges.push(chalk.hex('#FEE75C')('server-deafened'));
+	} else if (member.voice.selfDeaf) {
+		badges.push(chalk.hex('#FEE75C')('deafened'));
 	}
 	if (member.voice.streaming) {
-		states.push(chalk.hex('#EB459E')('streaming'));
+		badges.push(chalk.hex('#EB459E')('streaming'));
 	}
 	if (member.voice.selfVideo) {
-		states.push(chalk.hex('#00B0F4')('video'));
+		badges.push(chalk.hex('#00B0F4')('video'));
 	}
 
-	if (states.length === 0) {
-		return '';
-	}
-
-	return chalk.hex('#72767D')(` [${states.join(', ')}]`);
+	if (badges.length === 0) return '';
+	return ' ' + badges.map(b => chalk.hex('#4F545C')('[') + b + chalk.hex('#4F545C')(']')).join(' ');
 }
 
 async function renderChannelMessages(channelName: string, messages: Message[], ui: Pick<UIBridge, 'clearChat' | 'appendChat'>, currentUser: User | null): Promise<void> {
@@ -141,21 +139,35 @@ export function handleVoiceChannelSelect(
 	ui.setChatLabel(` #${channelDisplayName} `);
 	ui.setInputLabel(' Voice channel ');
 	ui.setTitleBar(guildDisplayName, channelDisplayName, 'connected');
-	ui.setStatusBar(chalk.hex('#57F287')(`Connected to voice #${channelDisplayName}`));
+	ui.setStatusBar(chalk.hex('#57F287')(`◉ Voice: #${channelDisplayName}`));
+
+	const bitrate = Math.round(channel.bitrate / 1000);
+	const userLimit = channel.userLimit === 0 ? '∞' : String(channel.userLimit);
 
 	ui.appendChat('');
-	ui.appendChat(chalk.hex('#72767D')(`  Server: ${guildDisplayName}`));
-	ui.appendChat(chalk.hex('#5865F2').bold(`  ✦ Voice Members (${members.length})`));
+	ui.appendChat(chalk.hex('#5865F2').bold(`  ◉ ${channelDisplayName}`));
+	ui.appendChat(
+		chalk.hex('#72767D')(`  ${guildDisplayName}`) +
+		chalk.hex('#4F545C')('  ·  ') +
+		chalk.hex('#72767D')(`${bitrate} kbps`) +
+		chalk.hex('#4F545C')('  ·  ') +
+		chalk.hex('#72767D')(`${members.length} / ${userLimit} users`)
+	);
+	ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(38)));
+	ui.appendChat('');
 
 	if (members.length === 0) {
-		ui.appendChat(chalk.hex('#99AAB5')('  No one is in this voice channel right now.'));
+		ui.appendChat(chalk.hex('#72767D')('  No one is in this voice channel.'));
 	} else {
 		for (const member of members) {
 			const memberName = sanitizeUiText(member.displayName || member.user.username, 'user');
-			const memberId = chalk.hex('#72767D')(` (${member.id})`);
-			ui.appendChat(`  • ${chalk.hex('#DCDDDE')(memberName)}${memberId}${formatVoiceMemberState(member, currentUser)}`);
+			const dot = presenceDot(member);
+			ui.appendChat(`  ${dot} ${chalk.hex('#DCDDDE')(memberName)}${formatVoiceMemberState(member, currentUser)}`);
 		}
 	}
 
+	ui.appendChat('');
+	ui.appendChat(chalk.hex('#4F545C')('  ' + '─'.repeat(38)));
+	ui.appendChat(chalk.hex('#72767D')('  Tip: /voiceleave  to leave this channel'));
 	ui.render();
 }
