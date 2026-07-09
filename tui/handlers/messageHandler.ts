@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 
 import { handleCommand, getCommandDefinitions, getCommandSuggestions } from './commandHandler.js';
+import type { CommandContext } from './commandHandler.js';
 import { handleChannelSelect } from './channelHandler.js';
 import { Client, DMChannel, Events, Message, TextChannel } from 'discord.js';
 import type { PartialMessage } from 'discord.js';
@@ -251,7 +252,7 @@ export function setupMessageHandlers(
 		};
 	};
 
-	const commandCtx = {
+	const commandCtx: CommandContext = {
 		client,
 		ui,
 		channelMap,
@@ -259,10 +260,17 @@ export function setupMessageHandlers(
 		setCurrentChannel,
 		getCurrentDMChannel,
 		setCurrentDMChannel,
-		leaveVoiceChannel: lifecycle?.leaveVoiceChannel,
-		isVoiceConnected: lifecycle?.isVoiceConnected,
-		requestQuit: lifecycle?.requestQuit,
 	};
+
+	if (lifecycle?.leaveVoiceChannel) {
+		commandCtx.leaveVoiceChannel = lifecycle.leaveVoiceChannel;
+	}
+	if (lifecycle?.isVoiceConnected) {
+		commandCtx.isVoiceConnected = lifecycle.isVoiceConnected;
+	}
+	if (lifecycle?.requestQuit) {
+		commandCtx.requestQuit = lifecycle.requestQuit;
+	}
 
 	const reloadCurrentDMChannel = async (dmChannel: DMChannel): Promise<void> => {
 		ui.clearChat();

@@ -211,7 +211,7 @@ const commands: Record<string, CommandHandler> = {
 	},
 
 	leavevoice: async (args, ctx) => {
-		await commands.voiceleave(args, ctx);
+		await commands.voiceleave!(args, ctx);
 	},
 
 	quit: async (_, { requestQuit }) => {
