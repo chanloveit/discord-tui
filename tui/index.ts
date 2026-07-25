@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env'), quiet: true });
 
 import { ChannelType, Client, DMChannel, GatewayIntentBits, Events, TextChannel, VoiceChannel } from 'discord.js';
 import { entersState, joinVoiceChannel, VoiceConnectionStatus, type VoiceConnection } from '@discordjs/voice';
@@ -20,7 +20,6 @@ import { createBlessedUIBridge } from './ui/blessedBridge.js';
 import { buildSidebarModel } from './utils/channelList.js';
 import type { SelectableChannel } from './utils/channelList.js';
 import { showLauncher } from './ui/launcher.js';
-import { clear } from 'console';
 
 const launcherResult = await showLauncher();
 const keepAlive = setInterval(() => {}, 1000);
