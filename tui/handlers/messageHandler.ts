@@ -7,6 +7,7 @@ import { Client, DMChannel, Events, Message, TextChannel } from 'discord.js';
 import type { PartialMessage } from 'discord.js';
 import type { UIBridge } from '../ui/types.js';
 import { renderMessage } from '../utils/messageRenderer.js';
+import { renderDateSeparator } from '../utils/formatters.js';
 import { resolveMentionsForSend } from '../utils/mentionResolver.js';
 import type { SelectableChannel } from '../utils/channelList.js';
 
@@ -22,6 +23,21 @@ type CommandCandidate = {
 	label: string;
 	insertValue: string;
 };
+
+function appendDateSeparatorIfNeeded(
+	ui: Pick<UIBridge, 'appendChat'>,
+	lastMessageTimestamp: number | null,
+	messageTimestamp: number
+): void {
+	if (
+		lastMessageTimestamp !== null
+		&& new Date(lastMessageTimestamp).toDateString() !== new Date(messageTimestamp).toDateString()
+	) {
+		ui.appendChat('');
+		ui.appendChat(renderDateSeparator(messageTimestamp));
+		//ui.appendChat('');
+	}
+}
 
 export function setupMessageHandlers(
 	client: Client,
@@ -282,6 +298,7 @@ export function setupMessageHandlers(
 		let lastAuthorId: string | null = null;
 		let lastMessageTimestamp: number | null = null;
 		for (const msg of messagesArray) {
+			appendDateSeparatorIfNeeded(ui, lastMessageTimestamp, msg.createdTimestamp);
 			await renderMessage(msg, ui, true, client.user ?? null, lastAuthorId, lastMessageTimestamp);
 			lastAuthorId = msg.author.id;
 			lastMessageTimestamp = msg.createdTimestamp;
@@ -323,6 +340,7 @@ export function setupMessageHandlers(
 		if(currentDMChannel && message.channel.id === currentDMChannel.id){
 			const lastAuthorId = lastAuthorMap.get(currentDMChannel.id) || null;
 			const lastMessageTimestamp = lastTimestampMap.get(currentDMChannel.id) ?? null;
+			appendDateSeparatorIfNeeded(ui, lastMessageTimestamp, message.createdTimestamp);
 			await renderMessage(message, ui, true, client.user, lastAuthorId, lastMessageTimestamp);
 			lastAuthorMap.set(currentDMChannel.id, message.author.id);
 			lastTimestampMap.set(currentDMChannel.id, message.createdTimestamp);
@@ -334,6 +352,7 @@ export function setupMessageHandlers(
 		if(currentChannel && message.channel.id === currentChannel.id){
 			const lastAuthorId = lastAuthorMap.get(currentChannel.id) || null;
 			const lastMessageTimestamp = lastTimestampMap.get(currentChannel.id) ?? null;
+			appendDateSeparatorIfNeeded(ui, lastMessageTimestamp, message.createdTimestamp);
 			await renderMessage(message, ui, true, client.user, lastAuthorId, lastMessageTimestamp);
 			lastAuthorMap.set(currentChannel.id, message.author.id);
 			lastTimestampMap.set(currentChannel.id, message.createdTimestamp);
@@ -388,6 +407,7 @@ export function setupMessageHandlers(
 			try{
 				const { lastAuthorId, lastMessageTimestamp } = await resolveLastMessageContext(currentDMChannel);
 				const sentMessage = await currentDMChannel.send(message);
+				appendDateSeparatorIfNeeded(ui, lastMessageTimestamp, sentMessage.createdTimestamp);
 				await renderMessage(sentMessage, ui, true, client.user, lastAuthorId, lastMessageTimestamp);
 				lastAuthorMap.set(currentDMChannel.id, sentMessage.author.id);
 				lastTimestampMap.set(currentDMChannel.id, sentMessage.createdTimestamp);
@@ -411,6 +431,7 @@ export function setupMessageHandlers(
 			const { lastAuthorId, lastMessageTimestamp } = await resolveLastMessageContext(currentChannel);
 			const mentionResolvedMessage = await resolveMentionsForSend(currentChannel, message);
 			const sentMessage = await currentChannel.send(mentionResolvedMessage);
+			appendDateSeparatorIfNeeded(ui, lastMessageTimestamp, sentMessage.createdTimestamp);
 			await renderMessage(sentMessage, ui, true, client.user, lastAuthorId, lastMessageTimestamp);
 			lastAuthorMap.set(currentChannel.id, sentMessage.author.id);
 			lastTimestampMap.set(currentChannel.id, sentMessage.createdTimestamp);
