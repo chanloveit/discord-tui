@@ -65,6 +65,8 @@ describe('channelHandler', () => {
     const channel = {
       name: 'voice-room',
       guild: { name: 'My Server' },
+      bitrate: 64000,
+      userLimit: 0,
       members: {
         values: () => [
           {
@@ -100,13 +102,12 @@ describe('channelHandler', () => {
     handleVoiceChannelSelect(channel, ui, { id: 'bot' } as any);
 
     expect(ui.setTitleBar).toHaveBeenCalledWith('My Server', 'voice-room', 'connected');
-    expect(ui.setStatusBar).toHaveBeenCalledWith(expect.stringContaining('Connected to voice #voice-room'));
-    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Voice Members (2)'));
+    expect(ui.setStatusBar).toHaveBeenCalledWith(expect.stringContaining('◉ Voice: #voice-room'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('voice-room'));
+    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('2 / ∞ users'));
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Bot User'));
-    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('(bot)'));
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('you'));
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('Alice'));
-    expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('(u1)'));
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('muted'));
     expect(ui.appendChat).toHaveBeenCalledWith(expect.stringContaining('streaming'));
     expect(ui.render).toHaveBeenCalled();
